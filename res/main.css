@@ -1,0 +1,286 @@
+body {
+	margin: 0px;
+	font-family: sans-serif;
+	font-size: 11px;
+	color: #444444;
+}
+
+#container {
+	position: absolute;
+	top: 0px;
+	right: 0px;
+	bottom: 0px;
+	left: 0px;
+	overflow: hidden;
+	background-color: #383E71;
+	background-image: url('bg.png');
+	background-repeat: repeat-both;
+	cursor: move;
+	cursor: all-scroll;
+	cursor: grab;
+}
+
+#container:active {
+	cursor: grabbing;
+}
+
+#map {
+	position: absolute;
+	image-rendering: optimizeSpeed;
+	image-rendering: -moz-crisp-edges;
+	image-rendering: -webkit-optimize-contrast;
+	image-rendering: optimize-contrast;
+	image-rendering: pixelated;
+	-ms-interpolation-mode: nearest-neighbor;
+}
+
+#markers {
+	position: absolute;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+.marker {
+	position: absolute;
+	text-align: center;
+	width: 256px;
+	height: 256px;
+}
+
+.deed {
+	display: inline;
+	background-color: rgba(0, 0, 0, 0.5);
+	color: #fff;
+	padding: 1px 2px 1px 2px;
+	line-height: 256px;
+	position: relative;
+	top: -16px;
+}
+
+.deed:after {
+	content: "";
+	width: 0; 
+	height: 0; 
+	border-left: 8px solid transparent;
+	border-right: 8px solid transparent;
+	border-top: 8px solid rgba(0, 0, 0, 0.5);
+	position: absolute;
+	margin-left: -8px;
+	left: 50%;
+	bottom: -8px;
+}
+
+.permanent {
+	color: #ff8800;
+}
+
+.border {
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	border-radius: 1px;
+	position: absolute;
+}
+
+.bounds {
+	position: absolute;
+}
+
+#search {
+	position: absolute;
+	top: 16px;
+	left: 64px;
+	background-color: #FFFFFF;
+	box-shadow: 0 0 8px rgba(0, 0, 0, 0.35);
+	border-radius: 2px;
+}
+
+#searchbox {
+	width: 256px;
+	height: 16px;
+	border: none;
+	padding: 6px;
+	border-radius: 2px;
+	color: #444;
+	float: left;
+	font-size: 11px;
+}
+
+#searchbutton {
+	width: 24px;
+	height: 24px;
+	border-radius: 2px;
+	background-image: url('search.png');
+	background-repeat: repeat-none;
+	float: left;
+	cursor: pointer;
+	margin: 2px;
+}
+
+#searchbutton:active {
+	background-position: 0px 1px;
+}
+
+#logo {
+	position: absolute;
+	top: 40px;
+	left: 60px;
+	width: 302px;
+	height: 67px;
+	background: url('logo.png') top left no-repeat;
+	margin: 0;
+	padding: 0;
+}
+
+#coords {
+	position: absolute;
+	bottom: 16px;
+	left: 16px;
+	width: 70px;
+	background-color: #FFFFFF;
+	box-shadow: 0 0 8px rgba(0, 0, 0, 0.35);
+	border-radius: 2px;
+	padding: 3px;
+}
+
+#info {
+	display: none;
+	position: absolute;
+	bottom: 16px;
+	left: 102px;
+	background-color: #FFFFFF;
+	box-shadow: 0 0 8px rgba(0, 0, 0, 0.35);
+	border-radius: 2px;
+	padding: 3px;
+}
+
+#timestamp {
+	position: absolute;
+	bottom: 16px;
+	right: 16px;
+	color: #FFF;
+}
+
+#autocomplete {
+	position: absolute;
+	top: 28px;
+	left: 4px;
+	background-color: #FFFFFF;
+	border-bottom-left-radius: 2px;
+	border-bottom-right-radius: 2px;
+	width: 256px;
+	overflow: hidden;
+}
+
+#autocomplete div {
+	padding: 3px;
+	font-size: 14px;
+	cursor: pointer;
+}
+
+#autocomplete div:hover {
+	background-color: #8EAEEE;
+}
+
+.controls {
+	width: 32px;
+	height: 100px;
+	box-shadow: 0 0 8px rgba(0, 0, 0, 0.35);
+	overflow: hidden;
+	border-radius: 2px;
+	font-size: 20px;
+}
+
+.controls div {
+	width: 32px;
+	height: 32px;
+	background-color: #FFFFFF;
+	text-align: center;
+	border-bottom: 1px solid #BBBBBB;
+	line-height: 32px;
+	cursor: pointer;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+.controls div:hover {
+	background-color: #EEEEEE;
+}
+
+.controls div:active {
+	padding-top: 1px;
+	margin-bottom: -1px;
+}
+
+#zoom {
+	position: absolute;
+	top: 16px;
+	left: 16px;
+}
+
+#mode {
+	position: absolute;
+	top: 96px;
+	left: 16px;
+	font-size: 12px;
+}
+
+.controls .selected {
+	background-color: #D5E9FF;
+	cursor: default;
+}
+
+.controls .selected:hover {
+	background-color: #D5E9FF;
+}
+
+
+.focusZone {
+	display: none;
+	background-color: rgba(0, 0, 0, 0.5);
+	color: #fff;
+	padding: 1px 2px 1px 2px;
+	line-height: 16px;
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+
+/*
+    public static final byte TYPE_NONE = 0;
+    public static final byte TYPE_VOLCANO = 1;
+    public static final byte TYPE_PVP = 2;
+    public static final byte TYPE_NAME = 3;
+    public static final byte TYPE_NAME_POPUP = 4;
+    public static final byte TYPE_NON_PVP = 5;
+    public static final byte TYPE_PVP_HOTA = 6;
+    public static final byte TYPE_PVP_BATTLECAMP = 7;
+    public static final byte TYPE_FLATTEN_DIRT = 8;
+    public static final byte TYPE_HOUSE_WOOD = 9;
+    public static final byte TYPE_HOUSE_STONE = 10;
+    public static final byte TYPE_PREM_SPAWN = 11;
+    public static final byte TYPE_NO_BUILD = 12;
+    public static final byte TYPE_TALLWALLS = 13;
+    public static final byte TYPE_FOG = 14;
+    public static final byte TYPE_FLATTEN_ROCK = 15;
+*/
+
+.fzb_5 {
+	border: 1px solid rgba(255, 255, 0, 0.35);
+}
+
+.fzb_12 {
+	border-color: red;
+	background-color: #F44;
+	opacity: 0.2;
+}
+
+.fzm_12 span {
+	color: #F44;
+}
