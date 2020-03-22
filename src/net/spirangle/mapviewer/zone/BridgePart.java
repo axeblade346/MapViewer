@@ -4,27 +4,27 @@ public final class BridgePart {
     private final int material;
     private final int heightOffset;
     private final int slope;
-    
-    public BridgePart(final int material, final int heightOffset, final int slope) {
+
+    public BridgePart(final int material,final int heightOffset,final int slope) {
         this.material = material;
         this.heightOffset = heightOffset;
         this.slope = slope;
     }
-    
+
     public int getMaterial() {
         return this.material;
     }
-    
+
     public int getHeightOffset() {
         return this.heightOffset;
     }
-    
+
     public int getSlope() {
         return this.slope;
     }
-    
+
     public int getColour() {
-        switch (this.material) {
+        switch(this.material) {
             case 1: {
                 return 8089440;
             }
@@ -39,15 +39,15 @@ public final class BridgePart {
             }
         }
     }
-    
+
     public int getShadowColour() {
         final int rgb = this.getColour();
-        int r = rgb >> 16 & 0xFF;
-        int g = rgb >> 8 & 0xFF;
-        int b = rgb & 0xFF;
+        int r = rgb >> 16&0xFF;
+        int g = rgb >> 8&0xFF;
+        int b = rgb&0xFF;
         r /= 3;
         g /= 3;
         b /= 3;
-        return r << 16 | g << 8 | b;
+        return r<<16|g<<8|b;
     }
 }
