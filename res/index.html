@@ -1,26 +1,9 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <title>Map Viewer</title>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" type="text/css" href="main.css"/>
-</head>
-
 <!--
 
-`7MMF'     A     `7MF'`YMM'   `MM'`7MMF'   `7MF'`7MM"""YMM  `7MM"""Mq.  `7MN.   `7MF'
-  `MA     ,MA     ,V    VMA   ,V    `MA     ,V    MM    `7    MM   `MM.   MMN.    M  
-   VM:   ,VVM:   ,V      VMA ,V      VM:   ,V     MM   d      MM   ,M9    M YMb   M  
-    MM.  M' MM.  M'       VMMP        MM.  M'     MMmmMM      MMmmdM9     M  `MN. M  
-    `MM A'  `MM A'         MM         `MM A'      MM   Y  ,   MM  YM.     M   `MM.M  
-     :MM;    :MM;          MM          :MM;       MM     ,M   MM   `Mb.   M     YMM  
-      VF      VF         .JMML.         VF      .JMMmmmmMMM .JMML. .JMM..JML.    YM  
-          __  __    _    ____   __     _____ _______        _______ ____  
-         |  \/  |  / \  |  _ \  \ \   / /_ _| ____\ \      / / ____|  _ \ 
-         | |\/| | / _ \ | |_) |  \ \ / / | ||  _|  \ \ /\ / /|  _| | |_) |
-         | |  | |/ ___ \|  __/    \ V /  | || |___  \ V  V / | |___|  _ < 
-         |_|  |_/_/   \_\_|        \_/  |___|_____|  \_/\_/  |_____|_| \_\
-                                          Copyright (c) 2015 Jonneh/Wyvern
+Awakening - Wurm Unlimited Server
+Map Viewer
+Copyright (c) 2019 Per Löwgren
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -29,29 +12,59 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 -->
-
+<html>
+<head>
+    <title>Awakening - Map</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="main.css"/>
+</head>
 <body>
-<div id="container">
+<main id="container">
     <canvas id="map" width="4096" height="4096"></canvas>
     <div id="markers"></div>
-    <div id="logo"></div>
-    <div id="zoom" class="controls">
-        <div id="zoomin">+</div>
-        <div id="zoomout">-</div>
+    <div id="sidebar">
+        <h2><a href="/">Awakening</a></h2>
+        <div id="zoom" class="panel">
+            <h3>Zoom</h3>
+            <div id="zoom-in">+</div>
+            <div id="zoom-out">-</div>
+            <p id="zoom-scale"></p>
+        </div>
+        <div id="map-type" class="panel">
+            <h3>Map Type</h3>
+            <div id="map-terrain" class="selected">Terrain</div>
+            <div id="map-topographic">Topographic</div>
+            <div id="map-isometric">Isometric</div>
+        </div>
+        <div id="coords" class="panel">
+            <h3>Coordinates</h3>
+            <p id="coords-pointer" style="display:none"></p>
+            <p id="coords-mouse">0, 0</p>
+            <p id="coords-distance" style="display:none"></p>
+        </div>
+        <div class="panel">
+            <h3>Layers</h3>
+            <label><input type="checkbox" id="layer-deeds" />Deeds</label>
+            <label><input type="checkbox" id="layer-guardtowers" />Guard towers</label>
+            <label><input type="checkbox" id="layer-highways" disabled />Highways</label>
+            <label><input type="checkbox" id="layer-bridges" disabled />Bridges</label>
+            <label><input type="checkbox" id="layer-tunnels" disabled />Tunnels</label>
+        </div>
+        <div class="panel">
+            <h3>Info</h3>
+            <p id="info"></p>
+        </div>
+        <footer>
+            <div id="timestamp"></div>
+            <a id="map-file" href="#" target="_blank">Map file</a>
+        </footer>
     </div>
-    <div id="mode" class="controls">
-        <div id="3d">3D</div>
-        <div id="flat" class="selected">Flat</div>
-        <div id="roads">Road</div>
-    </div>
-    <div id="search"><input type="text" id="searchbox"/>
+    <div id="search">
+        <input type="text" id="searchbox" placeholder="Search deeds and locations..." />
         <div id="searchbutton"></div>
         <div id="autocomplete" style="display: none;"></div>
     </div>
-    <div id="coords">0, 0</div>
-    <div id="info"></div>
-    <div id="timestamp"></div>
-</div>
+</main>
 <script type="text/javascript" src="config.js"></script>
 <script type="text/javascript" src="map.js"></script>
 </body>
