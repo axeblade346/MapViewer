@@ -2,7 +2,6 @@ package net.spirangle.mapviewer.zone;
 
 import com.wurmonline.server.support.JSONObject;
 
-
 public class PlayerData {
     private final long wurmId;
     private final String name;

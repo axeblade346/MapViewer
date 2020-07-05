@@ -17,7 +17,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public final class ZoneInfo {
-    private static final Logger LOGGER;
+    private static final Logger logger = Logger.getLogger(ZoneInfo.class.getName());
+
+    private static final int HW_NODE = 16711680;
+    private static final int HW_WAYSTONE = 16753920;
+
     private Server server;
     private final Map<String,PlayerData> playersData;
     private final Map<Long,PlayerData> playersDataById;
@@ -27,8 +31,6 @@ public final class ZoneInfo {
     private final List<GuardTower> guardTowers;
     private final Map<Tile,BridgePart> bridgeParts;
     private final List<HighwayNode> hwNodes;
-    private static final int HW_NODE = 16711680;
-    private static final int HW_WAYSTONE = 16753920;
 
     private ZoneInfo() {
         this.server = null;
@@ -80,19 +82,19 @@ public final class ZoneInfo {
             Files.createDirectory(temp,(FileAttribute<?>[])new FileAttribute[0]);
         }
 
-        ZoneInfo.LOGGER.log(Level.INFO,"Copying login database");
+        logger.log(Level.INFO,"Copying login database");
         final Path loginTable = temp.resolve("wurmlogin.db");
         Files.deleteIfExists(loginTable);
         Files.copy(config.getMapDirectory().resolve("sqlite/wurmlogin.db"),loginTable,new CopyOption[0]);
-        ZoneInfo.LOGGER.log(Level.INFO,"Copying zones database");
+        logger.log(Level.INFO,"Copying zones database");
         final Path zonesTable = temp.resolve("wurmzones.db");
         Files.deleteIfExists(zonesTable);
         Files.copy(config.getMapDirectory().resolve("sqlite/wurmzones.db"),zonesTable,new CopyOption[0]);
-        ZoneInfo.LOGGER.log(Level.INFO,"Copying items database");
+        logger.log(Level.INFO,"Copying items database");
         final Path itemsTable = temp.resolve("wurmitems.db");
         Files.deleteIfExists(itemsTable);
         Files.copy(config.getMapDirectory().resolve("sqlite/wurmitems.db"),itemsTable,new CopyOption[0]);
-        ZoneInfo.LOGGER.log(Level.INFO,"Copying modsupport database");
+        logger.log(Level.INFO,"Copying modsupport database");
         final Path modsupportTable = temp.resolve("modsupport.db");
         Files.deleteIfExists(modsupportTable);
         Files.copy(config.getMapDirectory().resolve("sqlite/modsupport.db"),modsupportTable,new CopyOption[0]);
@@ -113,7 +115,7 @@ public final class ZoneInfo {
         final Connection itemsConnection = DriverManager.getConnection("jdbc:sqlite:temp/wurmitems.db");
         final Connection modsupportConnection = DriverManager.getConnection("jdbc:sqlite:temp/modsupport.db");
 
-        ZoneInfo.LOGGER.log(Level.INFO,"Loading players data");
+        logger.log(Level.INFO,"Loading players data");
         final PreparedStatement playersDataStatement = modsupportConnection.prepareStatement("SELECT WURMID,NAME,DATA FROM PLAYERSDATA;");
         final ResultSet playersDataResultSet = playersDataStatement.executeQuery();
         while(playersDataResultSet.next()) {
@@ -127,11 +129,11 @@ public final class ZoneInfo {
                 playersData.put(name,pd);
                 playersDataById.put(wurmId,pd);
             } catch(JSONException e) {
-                ZoneInfo.LOGGER.log(Level.WARNING,"Failed to load data for "+name+": "+e.getMessage(),e);
+                logger.log(Level.WARNING,"Failed to load data for "+name+": "+e.getMessage(),e);
             }
         }
 
-        ZoneInfo.LOGGER.log(Level.INFO,"Loading server");
+        logger.log(Level.INFO,"Loading server");
         final PreparedStatement serverStatement = loginConnection.prepareStatement("SELECT * FROM SERVERS WHERE `SERVER` == ?;");
         serverStatement.setInt(1,config.getServerId());
         final ResultSet serverResultSet = serverStatement.executeQuery();
@@ -143,7 +145,7 @@ public final class ZoneInfo {
             info.server = server;
         }
 
-        ZoneInfo.LOGGER.log(Level.INFO,"Loading bridges");
+        logger.log(Level.INFO,"Loading bridges");
         final PreparedStatement bridgeStatement = zonesConnection.prepareStatement("SELECT * FROM BRIDGEPARTS;");
         final ResultSet bridgeResultSet = bridgeStatement.executeQuery();
         while(bridgeResultSet.next()) {
@@ -157,7 +159,7 @@ public final class ZoneInfo {
             bridges.put(tile,bridgePart);
         }
 
-        ZoneInfo.LOGGER.log(Level.INFO,"Loading focus zones");
+        logger.log(Level.INFO,"Loading focus zones");
         final PreparedStatement focusZoneStatement = zonesConnection.prepareStatement("SELECT * FROM FOCUSZONES;");
         final ResultSet focusZonesResultSet = focusZoneStatement.executeQuery();
         while(focusZonesResultSet.next()) {
@@ -170,7 +172,7 @@ public final class ZoneInfo {
             focusZones.add(new FocusZone(name,sx,sy,ex,ey,type));
         }
 
-        ZoneInfo.LOGGER.log(Level.INFO,"Loading deeds and tokens");
+        logger.log(Level.INFO,"Loading deeds and tokens");
         final PreparedStatement tokenStatement = itemsConnection.prepareStatement("SELECT * FROM ITEMS WHERE `WURMID` == ?;");
         final PreparedStatement deedStatement = zonesConnection.prepareStatement("SELECT * FROM VILLAGES WHERE `DISBANDED` == 0;");
         final ResultSet deedResultSet = deedStatement.executeQuery();
@@ -211,7 +213,7 @@ public final class ZoneInfo {
             deeds.add(new Deed(name,founder,mayor,creationDate,democracy,kingdom,x,y,permanent,pvp,sx,sy,ex,ey,visibility));
         }
 
-        ZoneInfo.LOGGER.log(Level.INFO,"Loading kingdoms");
+        logger.log(Level.INFO,"Loading kingdoms");
         final PreparedStatement kingdomsStatement = zonesConnection.prepareStatement("SELECT k.KINGDOM,k.KINGDOMNAME,e.KINGSNAME FROM KINGDOMS AS k LEFT JOIN KING_ERA AS e ON e.KINGDOM=k.KINGDOM AND e.CURRENT=1;");
         final ResultSet kingdomsResultSet = kingdomsStatement.executeQuery();
         while(kingdomsResultSet.next()) {
@@ -221,7 +223,7 @@ public final class ZoneInfo {
             kingdoms.add(new Kingdom(kingdom,name,king));
         }
 
-        ZoneInfo.LOGGER.log(Level.INFO,"Loading guard towers");
+        logger.log(Level.INFO,"Loading guard towers");
         final PreparedStatement guardTowerItemsStatement = itemsConnection.prepareStatement("SELECT TEMPLATEID,POSX,POSY,POSZ,CREATIONDATE,LASTOWNERID,AUXDATA,DESCRIPTION FROM ITEMS WHERE TEMPLATEID IN (384,430,528,638);");
         final ResultSet guardTowerItemsResultSet = guardTowerItemsStatement.executeQuery();
         while(guardTowerItemsResultSet.next()) {
@@ -239,7 +241,7 @@ public final class ZoneInfo {
             guardTowers.add(new GuardTower(owner,creationDate,a,x/4,y/4,Math.round(z*10.0f),desc));
         }
 
-        ZoneInfo.LOGGER.log(Level.INFO,"Loading highways");
+        logger.log(Level.INFO,"Loading highways");
         final PreparedStatement highwayItemsStatement = itemsConnection.prepareStatement("SELECT TEMPLATEID,POSX,POSY,AUXDATA FROM ITEMS WHERE TEMPLATEID IN (1114,1112);");
         final ResultSet highwayItemsResultSet = highwayItemsStatement.executeQuery();
         while(highwayItemsResultSet.next()) {
@@ -257,9 +259,5 @@ public final class ZoneInfo {
         zonesConnection.close();
         loginConnection.close();
         return info;
-    }
-
-    static {
-        LOGGER = Logger.getLogger(ZoneInfo.class.getName());
     }
 }

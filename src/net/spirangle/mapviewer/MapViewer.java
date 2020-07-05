@@ -10,58 +10,158 @@ import java.nio.file.*;
 import java.nio.file.attribute.FileAttribute;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
 public final class MapViewer {
-    private static final Logger LOGGER;
-    private static final String[] RESOURCES;
+    private static final Logger logger = Logger.getLogger(MapViewer.class.getName());
+
+    private static final String[] resources = {
+        "bg.png",
+        "logo.png",
+        "main.css",
+        "map.js",
+        "pointer.png",
+        "search.png",
+        "tower.png"
+    };
 
     public static void main(final String[] args) throws IOException, SQLException {
-        MapViewer.LOGGER.log(Level.INFO,"Loading config");
-        Config config;
-        config = Config.load(Paths.get("mapviewer.config",new String[0]));
+        logger.info("Loading config");
+        String suffix = args.length>=1? "-"+args[0] : "";
+        Config config = Config.getInstance();
+        config.load(Paths.get("mapviewer.properties",new String[0]),suffix);
 
         final Renderer renderer = new Renderer(config);
         if(Files.notExists(config.getOutputDirectory(),new LinkOption[0])) {
-            Files.createDirectory(config.getOutputDirectory(),(FileAttribute<?>[])new FileAttribute[0]);
+            Files.createDirectory(config.getOutputDirectory(),new FileAttribute[0]);
         }
         copyResources(config);
-        MapViewer.LOGGER.log(Level.INFO,"Loading map data");
+        logger.info("Loading map data");
         final ZoneInfo zoneInfo = ZoneInfo.load(config);
-        final int size = renderer.load(zoneInfo.getDeeds(),zoneInfo.getBridgeParts(),zoneInfo.getFocusZones(),zoneInfo.getHwNodes());
-        saveConfig(config.getOutputDirectory(),zoneInfo.getDeeds(),zoneInfo.getFocusZones(),zoneInfo.getKingdoms(),zoneInfo.getGuardTowers(),config,size);
-        MapViewer.LOGGER.log(Level.INFO,"Saving terrain map");
+        final int size = renderer.load(zoneInfo);
+        saveIndex(config,zoneInfo,size);
+        saveConfig(config,zoneInfo,size);
+        logger.info("Saving terrain map");
         renderer.save(config.getOutputDirectory().resolve("map-terrain.png"),Renderer.Type.TERRAIN);
-//      renderer.save(config.getOutputDirectory().resolve("sections-flat"),Renderer.Type.FLAT);
-        MapViewer.LOGGER.log(Level.INFO,"Saving topographic map");
+        logger.info("Saving topographic map");
         renderer.save(config.getOutputDirectory().resolve("map-topographic.png"),Renderer.Type.TOPOGRAPHIC);
-//      renderer.save(config.getOutputDirectory().resolve("sections-roads"),Renderer.Type.ROADS);
-        MapViewer.LOGGER.log(Level.INFO,"Saving isometric map");
+        logger.info("Saving isometric map");
         renderer.save(config.getOutputDirectory().resolve("map-isometric.png"),Renderer.Type.ISOMETRIC);
-//      renderer.save(config.getOutputDirectory().resolve("sections-3d"),Renderer.Type.ISOMETRIC);
-        MapViewer.LOGGER.log(Level.INFO,"Done");
+        logger.info("Done");
     }
 
     private static void copyResources(final Config config) throws IOException {
-        String[] resources;
-        for(int length = (resources = MapViewer.RESOURCES).length, i = 0; i<length; ++i) {
-            final String res = resources[i];
-            final Throwable t = null;
-            try(final InputStream in = MapViewer.class.getResourceAsStream("/res/"+res)) {
-                final Path path = config.getOutputDirectory().resolve(res);
-                if(!Files.exists(path,new LinkOption[0])) {
-                    MapViewer.LOGGER.log(Level.INFO,"Copying "+res+" to "+path);
+        for(final String res : MapViewer.resources) {
+            final Path path = config.getOutputDirectory().resolve(res);
+            if(!Files.exists(path,new LinkOption[0])) {
+                try(final InputStream in = MapViewer.class.getResourceAsStream("/res/"+res)) {
+                    logger.info("Copying "+res+" to "+path);
                     Files.copy(in,path,new CopyOption[0]);
                 }
             }
         }
     }
 
-    private static void saveConfig(final Path path,final List<Deed> deeds,final List<FocusZone> focusZones,final List<Kingdom> kingdoms,
-                                   final List<GuardTower> guardTowers,final Config config,final int size) throws IOException {
-        MapViewer.LOGGER.log(Level.INFO,"Saving config file");
+    private static void saveIndex(final Config config,final ZoneInfo zoneInfo,final int size) throws IOException {
+        boolean php = config.usePhpOutput();
+        String fileName = php? "index.php" : "index.html";
+        Path path = config.getOutputDirectory();
+        if(Files.notExists(path,new LinkOption[0])) {
+            Files.createDirectory(path,new FileAttribute[0]);
+        }
+        path = path.resolve(fileName);
+        logger.info("Saving index file");
+        StringBuilder sb = new StringBuilder();
+        String serverName = config.getServerName().replace("\"","&quot;");
+        if(php) {
+            sb.append("<?php\n\n")
+              .append("$serverName = \"").append(serverName).append("\";\n")
+              .append("$mapSize = ").append(size).append(";\n")
+              .append("\n?>");
+        }
+        sb.append("<!DOCTYPE html>\n")
+          .append("<html>\n")
+          .append("<head>\n");
+        if(php) {
+            sb.append("<title><?= $serverName ?> - Map</title>\n");
+        } else {
+            sb.append("<title>"+serverName+" - Map</title>\n");
+        }
+        sb.append("<meta charset=\"UTF-8\">\n")
+          .append("<link rel=\"stylesheet\" type=\"text/css\" href=\"main.css\"/>\n")
+          .append("</head>\n")
+          .append("<body>\n")
+          .append("<main id=\"container\">\n");
+        if(php) {
+            sb.append("  <canvas id=\"map\" width=\"<?= $mapSize ?>\" height=\"<?= $mapSize ?>\"></canvas>\n");
+        } else {
+            sb.append("  <canvas id=\"map\" width=\""+size+"\" height=\""+size+"\"></canvas>\n");
+        }
+        sb.append("  <div id=\"markers\"></div>\n")
+          .append("  <div id=\"sidebar\">\n");
+        if(php) {
+            sb.append("    <h2><a href=\"/\"><?= $serverName ?></a></h2>\n");
+        } else {
+            sb.append("    <h2><a href=\"/\">"+serverName+"</a></h2>\n");
+        }
+        sb.append("    <div id=\"zoom\" class=\"panel\">\n")
+          .append("      <h3>Zoom</h3>\n")
+          .append("      <div id=\"zoom-in\">+</div>\n")
+          .append("      <div id=\"zoom-out\">-</div>\n")
+          .append("      <p id=\"zoom-scale\"></p>\n")
+          .append("    </div>\n")
+          .append("    <div id=\"map-type\" class=\"panel\">\n")
+          .append("      <h3>Map Type</h3>\n")
+          .append("      <div id=\"map-terrain\" class=\"selected\">Terrain</div>\n")
+          .append("      <div id=\"map-topographic\">Topographic</div>\n")
+          .append("      <div id=\"map-isometric\">Isometric</div>\n")
+          .append("    </div>\n")
+          .append("    <div id=\"coords\" class=\"panel\">\n")
+          .append("      <h3>Coordinates</h3>\n")
+          .append("      <p id=\"coords-pointer\" style=\"display:none\"></p>\n")
+          .append("      <p id=\"coords-mouse\">0, 0</p>\n")
+          .append("      <p id=\"coords-distance\" style=\"display:none\"></p>\n")
+          .append("    </div>\n")
+          .append("    <div class=\"panel\">\n")
+          .append("      <h3>Layers</h3>\n")
+          .append("      <label><input type=\"checkbox\" id=\"layer-deeds\" />Deeds</label>\n")
+          .append("      <label><input type=\"checkbox\" id=\"layer-guardtowers\" />Guard towers</label>\n")
+          .append("      <label><input type=\"checkbox\" id=\"layer-highways\" disabled />Highways</label>\n")
+          .append("      <label><input type=\"checkbox\" id=\"layer-bridges\" disabled />Bridges</label>\n")
+          .append("      <label><input type=\"checkbox\" id=\"layer-tunnels\" disabled />Tunnels</label>\n")
+          .append("    </div>\n")
+          .append("    <div class=\"panel\">\n")
+          .append("      <h3>Info</h3>\n")
+          .append("      <p id=\"info\"></p>\n")
+          .append("    </div>\n")
+          .append("    <footer>\n")
+          .append("      <div id=\"timestamp\"></div>\n")
+          .append("      <a id=\"map-file\" href=\"#\" target=\"_blank\">Map file</a>\n")
+          .append("    </footer>\n")
+          .append("  </div>\n")
+          .append("  <div id=\"search\">\n")
+          .append("    <input type=\"text\" id=\"searchbox\" placeholder=\"Search deeds and locations...\" />\n")
+          .append("    <div id=\"searchbutton\"></div>\n")
+          .append("    <div id=\"autocomplete\" style=\"display: none;\"></div>\n")
+          .append("  </div>\n")
+          .append("</main>\n")
+          .append("<script type=\"text/javascript\" src=\"config.js\"></script>\n")
+          .append("<script type=\"text/javascript\" src=\"map.js\"></script>\n")
+          .append("</body>\n")
+          .append("</html>\n");
+        try(final OutputStream out = Files.newOutputStream(path,new OpenOption[0])) {
+            out.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    private static void saveConfig(final Config config,final ZoneInfo zoneInfo,final int size) throws IOException {
+        logger.info("Saving config file");
+        final Path path = config.getOutputDirectory();
+        final List<Deed> deeds = zoneInfo.getDeeds();
+        final List<FocusZone> focusZones = zoneInfo.getFocusZones();
+        final List<Kingdom> kingdoms = zoneInfo.getKingdoms();
+        final List<GuardTower> guardTowers = zoneInfo.getGuardTowers();
         int y;
         int x = y = size/2;
         for(final Deed deed : deeds) {
@@ -72,7 +172,7 @@ public final class MapViewer {
             }
         }
         if(Files.notExists(path,new LinkOption[0])) {
-            Files.createDirectory(path,(FileAttribute<?>[])new FileAttribute[0]);
+            Files.createDirectory(path,new FileAttribute[0]);
         }
         StringBuilder sb = new StringBuilder();
         sb.append("\nfunction Config() {}\n");
@@ -188,10 +288,5 @@ public final class MapViewer {
         try(final OutputStream out = Files.newOutputStream(path.resolve("config.js"),new OpenOption[0])) {
             out.write(sb.toString().getBytes(StandardCharsets.UTF_8));
         }
-    }
-
-    static {
-        LOGGER = Logger.getLogger(MapViewer.class.getName());
-        RESOURCES = new String[]{"index.html","map.js","main.css","search.png","bg.png","logo.png"};
     }
 }
