@@ -1,6 +1,4 @@
 
-@import url('https://fonts.googleapis.com/css?family=Metamorphous');
-
 body {
 	margin: 0px;
 	font-family: sans-serif;
@@ -80,8 +78,8 @@ a, a:hover, a:focus {
 
 .deed:after {
 	content: "";
-	width: 0; 
-	height: 0; 
+	width: 0;
+	height: 0;
 	border-left: 8px solid transparent;
 	border-right: 8px solid transparent;
 	border-top: 8px solid rgba(0, 0, 0, 0.5);
@@ -195,7 +193,7 @@ a, a:hover, a:focus {
 	position: relative;
 	display: block;
 	text-align: center;
-	font-family: Metamorphous;
+	font-family: "Book Antiqua";
 	font-weight: normal;
 	font-size: 16px;
 	line-height: 26px;
