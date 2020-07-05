@@ -16,8 +16,25 @@ import java.util.*;
 import java.util.logging.Logger;
 
 public final class Renderer {
-    private static final Logger LOGGER;
-    private static final int[] COLOURS;
+
+    private static final Logger logger = Logger.getLogger(Renderer.class.getName());
+
+    private static final int[] colors = new int[256];
+
+    static {
+        for(final Tiles.Tile tile : Tiles.Tile.values())
+            colors[tile.id&0xFF] = tile.getColor().getRGB();
+        colors[Tiles.Tile.TILE_CLAY.id] = 0x505774;
+        colors[Tiles.Tile.TILE_FIELD.id] = 0x5f7424;
+        colors[Tiles.Tile.TILE_FIELD2.id] = 0x5f7424;
+    }
+
+    public enum Type {
+        TERRAIN,
+        TOPOGRAPHIC,
+        ISOMETRIC;
+    }
+
     private final Config config;
     private final List<Deed> deeds;
     private final Map<Tile,BridgePart> bridgeParts;
@@ -33,11 +50,15 @@ public final class Renderer {
     public Renderer(final Config config) {
         this.deeds = new ArrayList<>();
         this.bridgeParts = new HashMap<>();
-        this.size = 4096;
+        this.size = -1;
         this.config = config;
     }
 
-    public int load(final List<Deed> deeds,final Map<Tile,BridgePart> bridgeParts,final List<FocusZone> focusZones,final List<HighwayNode> hwNodes) throws IOException {
+    public int load(final ZoneInfo zoneInfo) throws IOException {
+        final List<Deed> deeds = zoneInfo.getDeeds();
+        final Map<Tile,BridgePart> bridgeParts = zoneInfo.getBridgeParts();
+        final List<FocusZone> focusZones = zoneInfo.getFocusZones();
+        final List<HighwayNode> hwNodes = zoneInfo.getHwNodes();
         this.deeds.addAll(deeds);
         this.bridgeParts.putAll(bridgeParts);
         final Path temp = Paths.get("temp",new String[0]);
@@ -123,7 +144,7 @@ public final class Renderer {
     }
 
     private void renderTile(final int[] pixels,final Type type,final int x,final int y,final int[][] typeData,final int[][] metaData,final int[][] heightData) {
-        int colour = Renderer.COLOURS[typeData[x][y]];
+        int colour = Renderer.colors[typeData[x][y]];
         if(type.equals(Type.ISOMETRIC)) {
             float r = (float)(colour >>> 16&0xFF);
             float g = (float)(colour >>> 8&0xFF);
@@ -228,23 +249,5 @@ public final class Renderer {
         try(final OutputStream out = Files.newOutputStream(path,new OpenOption[0])) {
             ImageIO.write(img,"PNG",out);
         }
-    }
-
-    static {
-        LOGGER = Logger.getLogger(Renderer.class.getName());
-        COLOURS = new int[256];
-        for(final Tiles.Tile tile : Tiles.Tile.values()) {
-            Renderer.COLOURS[tile.id&0xFF] = tile.getColor().getRGB();
-        }
-        Renderer.COLOURS[Tiles.Tile.TILE_CLAY.id] = 0x505774;
-        Renderer.COLOURS[Tiles.Tile.TILE_FIELD.id] = 0x5f7424;
-        Renderer.COLOURS[Tiles.Tile.TILE_FIELD2.id] = 0x5f7424;
-    }
-
-
-    public enum Type {
-        TERRAIN,
-        TOPOGRAPHIC,
-        ISOMETRIC;
     }
 }
