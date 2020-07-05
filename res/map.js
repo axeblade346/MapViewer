@@ -263,26 +263,24 @@
 				let px = Math.floor((this.x+this.mx-(getWidth()/2))/this.zoom);
 				let py = Math.floor((this.y+this.my-(getHeight()/2))/this.zoom);
 				if(px==this.pointer.x && py==this.pointer.y) {
-					this.setPointer(-1,-1);
-				} else {
-					this.setPointer(px,py);
+					px = -1;
+					py = -1;
 				}
+				this.setPointer(px,py);
 				this.updateHash(this.pointer.x,this.pointer.y);
 			}
 		}
 
 		this.setPointer = function(px,py) {
+			this.pointer.x = px;
+			this.pointer.y = py;
 			if(px!=-1 && py!=-1) {
-				this.pointer.x = px;
-				this.pointer.y = py;
 				this.config.coordsPointer.style.display = 'block';
 				this.config.coordsPointer.innerHTML = this.pointer.x+', '+this.pointer.y;
 				this.config.coordsDistance.style.display = 'block';
 				this.config.coordsDistance.innerHTML = '0 [0, 0]';
 				this.updatePointer();
 			} else {
-				this.pointer.x = -1;
-				this.pointer.y = -1;
 				this.config.coordsPointer.style.display = 'none';
 				this.config.coordsDistance.style.display = 'none';
 				this.pointer.element.style.display = 'none';
