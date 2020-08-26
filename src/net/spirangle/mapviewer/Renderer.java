@@ -45,7 +45,6 @@ public final class Renderer {
     private int[][] originalTypeData;
     private int[][] originalMetaData;
     private int[][] originalHeightData;
-    private List<HighwayNode> hwNodes;
 
     public Renderer(final Config config) {
         this.deeds = new ArrayList<>();
@@ -58,7 +57,6 @@ public final class Renderer {
         final List<Deed> deeds = zoneInfo.getDeeds();
         final Map<Tile,BridgePart> bridgeParts = zoneInfo.getBridgeParts();
         final List<FocusZone> focusZones = zoneInfo.getFocusZones();
-        final List<HighwayNode> hwNodes = zoneInfo.getHwNodes();
         this.deeds.addAll(deeds);
         this.bridgeParts.putAll(bridgeParts);
         final Path temp = Paths.get("temp",new String[0]);
@@ -116,8 +114,6 @@ public final class Renderer {
                 }
             }
         }
-
-        this.hwNodes = hwNodes;
         return this.size;
     }
 
@@ -237,11 +233,6 @@ public final class Renderer {
                 pixels[y*this.size+x] = part.getColour();
             }
         }
-        /*if(type==Type.ROADS) {
-            for(final HighwayNode n : this.hwNodes) {
-                pixels[n.y*this.size+n.x] = n.c;
-            }
-        }*/
     }
 
     public void save(final Path path,final Type type) throws IOException {
