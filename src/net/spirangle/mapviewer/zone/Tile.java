@@ -19,14 +19,12 @@ public final class Tile {
 
     @Override
     public int hashCode() {
-        return this.x*13+this.y*7+1;
+        return this.x<<15+this.y;
     }
 
     @Override
     public boolean equals(final Object o) {
-        if(!(o instanceof Tile)) {
-            return false;
-        }
+        if(!(o instanceof Tile)) return false;
         final Tile t = (Tile)o;
         return t.x==this.x && t.y==this.y;
     }
