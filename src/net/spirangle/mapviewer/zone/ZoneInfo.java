@@ -1,5 +1,7 @@
 package net.spirangle.mapviewer.zone;
 
+import com.wurmonline.server.items.ItemList;
+import com.wurmonline.server.players.Permissions;
 import com.wurmonline.server.support.JSONException;
 import com.wurmonline.server.support.JSONObject;
 import com.wurmonline.server.support.JSONTokener;
@@ -9,18 +11,18 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.FileAttribute;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public final class ZoneInfo {
+
     private static final Logger logger = Logger.getLogger(ZoneInfo.class.getName());
 
-    private static final int HW_NODE = 16711680;
-    private static final int HW_WAYSTONE = 16753920;
+    private static long PLANTED = 1<<Permissions.Allow.PLANTED.getBit();
+
+    private static final int[] adjacentX = { -1,0,1,-1,1,-1,0,1 }; // Num-Pad: 1,2,3,4,6,7,8,9
+    private static final int[] adjacentY = { 1,1,1,0,0,-1,-1,-1 };
 
     private Server server;
     private final Map<String,PlayerData> playersData;
@@ -109,6 +111,7 @@ public final class ZoneInfo {
         final List<Kingdom> kingdoms = info.getKingdoms();
         final List<GuardTower> guardTowers = info.getGuardTowers();
         final List<HighwayNode> hwNodes = info.getHwNodes();
+        final Map<Tile,HighwayNode> hwNodesMap = new HashMap<>();
 
         final Connection loginConnection = DriverManager.getConnection("jdbc:sqlite:temp/wurmlogin.db");
         final Connection zonesConnection = DriverManager.getConnection("jdbc:sqlite:temp/wurmzones.db");
@@ -242,16 +245,69 @@ public final class ZoneInfo {
         }
 
         logger.log(Level.INFO,"Loading highways");
-        final PreparedStatement highwayItemsStatement = itemsConnection.prepareStatement("SELECT TEMPLATEID,POSX,POSY,AUXDATA FROM ITEMS WHERE TEMPLATEID IN (1114,1112);");
+        final PreparedStatement highwayItemsStatement = itemsConnection.prepareStatement("SELECT TEMPLATEID,POSX,POSY,AUXDATA,SETTINGS FROM ITEMS WHERE TEMPLATEID IN (?,?);");
+        highwayItemsStatement.setLong(1,ItemList.catseye);
+        highwayItemsStatement.setLong(2,ItemList.waystone);
         final ResultSet highwayItemsResultSet = highwayItemsStatement.executeQuery();
         while(highwayItemsResultSet.next()) {
             final int t = highwayItemsResultSet.getInt("TEMPLATEID");
             final int x = highwayItemsResultSet.getInt("POSX");
             final int y = highwayItemsResultSet.getInt("POSY");
             final int a = highwayItemsResultSet.getInt("AUXDATA");
-            if(x>0 && (y>0&a!=0)) {
-                hwNodes.add(new HighwayNode(x/4,y/4,(t==1112)? 16753920 : 16711680));
+            final long s = highwayItemsResultSet.getLong("SETTINGS");
+            if(x>0 && y>0 & a!=0 && (s&PLANTED)!=0L) {
+                Tile tile = new Tile(x/4,y/4);
+                hwNodesMap.put(tile,new HighwayNode(x/4,y/4,t==ItemList.waystone));
             }
+        }
+        logger.log(Level.INFO,"Linking all highway nodes");
+        for(final Map.Entry<Tile,HighwayNode> entry : hwNodesMap.entrySet()) {
+            HighwayNode n = entry.getValue();
+            for(int i=0; i<8; ++i) {
+                n.nodes[i] = hwNodesMap.get(new Tile(n.x+adjacentX[i],n.y+adjacentY[i]));
+                if(n.nodes[i]!=null) n.nodeCount++;
+            }
+        }
+        logger.log(Level.INFO,"Unlinking highway corner nodes");
+        for(final Map.Entry<Tile,HighwayNode> entry : hwNodesMap.entrySet()) {
+            HighwayNode n = entry.getValue();
+            if(n.nodes[0]!=null && n.nodes[1]!=null) unlinkHighwayCornerDiagonal(n,0,1,3);
+            else if(n.nodes[2]!=null && n.nodes[1]!=null) unlinkHighwayCornerDiagonal(n,2,1,4);
+            else if(n.nodeCount==2) {
+                if(n.nodes[0]!=null && n.nodes[2]!=null) unlinkHighwayCorner(n,0,2,4);
+                else if(n.nodes[2]!=null && n.nodes[7]!=null) unlinkHighwayCorner(n,2,7,6);
+            }
+        }
+        logger.log(Level.INFO,"Unlinking highway nodes in a straight line");
+        for(final Map.Entry<Tile,HighwayNode> entry : hwNodesMap.entrySet()) {
+            HighwayNode n = entry.getValue();
+            if(n.nodeCount==0) continue;
+            for(int i=0; i<8; ++i)
+                if(n.nodes[i]!=null) {
+                    HighwayNode a = n.nodes[i];
+                    for(HighwayNode b; a.nodes[i]!=null; a=b) {
+                        b = a.nodes[i];
+                        a.nodes[i] = null;
+                        a.nodes[7-i] = null;
+                        a.nodeCount -= 2;
+                    }
+                    n.nodes[i] = a;
+                    a.nodes[7-i] = n;
+                }
+        }
+        logger.log(Level.INFO,"Removing double links and unlinked highway nodes (except waystones)");
+        Iterator<Map.Entry<Tile,HighwayNode>> iterator = hwNodesMap.entrySet().iterator();
+        while(iterator.hasNext()) {
+            Map.Entry<Tile,HighwayNode> entry = iterator.next();
+            HighwayNode n = entry.getValue();
+            if(n.nodeCount>0 && !n.waystone) {
+                for(int i = 0; i<8; ++i)
+                    if(n.nodes[i]!=null && n.nodes[i].nodes[7-i]==n) {
+                        n.nodes[i] = null;
+                        n.nodeCount--;
+                    }
+            }
+            if(n.waystone || n.nodeCount>0) hwNodes.add(n);
         }
 
         modsupportConnection.close();
@@ -259,5 +315,52 @@ public final class ZoneInfo {
         zonesConnection.close();
         loginConnection.close();
         return info;
+    }
+
+    private static void unlinkHighwayCorner(HighwayNode n,int d1,int d2,int c) {
+        n.nodes[d1].nodes[c] = n.nodes[d2];
+        n.nodes[d2].nodes[7-c] = n.nodes[d1];
+        n.nodes[d1].nodes[7-d1] = null;
+        n.nodes[d2].nodes[7-d2] = null;
+        n.nodes[d1] = null;
+        n.nodes[d2] = null;
+        n.nodeCount = 0;
+    }
+
+    private static void unlinkHighwayCornerDiagonal(HighwayNode n,int d,int c1,int c2) {
+        HighwayNode nc1 = n.nodes[c1];
+        if(nc1.nodeCount==2) {
+            nc1.nodes[7-c1] = null;
+            nc1.nodes[c2] = null;
+            nc1.nodeCount = 0;
+            n.nodes[c1] = null;
+            n.nodeCount--;
+            n.nodes[d].nodes[7-c2] = null;
+            n.nodes[d].nodeCount--;
+        } else if((nc1.nodeCount==4 && nc1.nodes[d]!=null && nc1.nodes[7-d]!=null) ||
+                  (nc1.nodeCount==3 && (nc1.nodes[d]!=null || nc1.nodes[7-d]!=null))) {
+            nc1.nodes[7-c1] = null;
+            nc1.nodes[c2] = null;
+            if(nc1.nodes[d]!=null) {
+                nc1.nodes[d].nodes[7-d] = null;
+                nc1.nodes[d].nodeCount--;
+                nc1.nodes[d] = null;
+            }
+            if(nc1.nodes[7-d]!=null) {
+                nc1.nodes[7-d].nodes[d] = null;
+                nc1.nodes[7-d].nodeCount--;
+                nc1.nodes[7-d] = null;
+            }
+            nc1.nodeCount = 0;
+            n.nodes[c1] = null;
+            n.nodeCount--;
+            n.nodes[d].nodes[7-c2] = null;
+            n.nodes[d].nodeCount--;
+        } else {
+            n.nodes[d].nodes[7-d] = null;
+            n.nodes[d].nodeCount--;
+            n.nodes[d] = null;
+            n.nodeCount--;
+        }
     }
 }

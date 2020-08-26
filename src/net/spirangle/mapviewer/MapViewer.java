@@ -127,7 +127,7 @@ public final class MapViewer {
           .append("      <h3>Layers</h3>\n")
           .append("      <label><input type=\"checkbox\" id=\"layer-deeds\" />Deeds</label>\n")
           .append("      <label><input type=\"checkbox\" id=\"layer-guardtowers\" />Guard towers</label>\n")
-          .append("      <label><input type=\"checkbox\" id=\"layer-highways\" disabled />Highways</label>\n")
+          .append("      <label><input type=\"checkbox\" id=\"layer-highways\" />Highways</label>\n")
           .append("      <label><input type=\"checkbox\" id=\"layer-bridges\" disabled />Bridges</label>\n")
           .append("      <label><input type=\"checkbox\" id=\"layer-tunnels\" disabled />Tunnels</label>\n")
           .append("    </div>\n")
@@ -162,6 +162,7 @@ public final class MapViewer {
         final List<FocusZone> focusZones = zoneInfo.getFocusZones();
         final List<Kingdom> kingdoms = zoneInfo.getKingdoms();
         final List<GuardTower> guardTowers = zoneInfo.getGuardTowers();
+        final List<HighwayNode> hwNodes = zoneInfo.getHwNodes();
         int y;
         int x = y = size/2;
         for(final Deed deed : deeds) {
@@ -284,6 +285,30 @@ public final class MapViewer {
               .append(guardTower.getZ()).append(",'")
               .append(guardTower.getDescription().replace("'","\\'")).append("'));\n");
         }
+        sb.append("highwayNodes = [");
+        int nodes = 0;
+        for(final HighwayNode node : hwNodes) {
+            if(node.nodeCount==0) {
+                if(nodes>0) sb.append(',');
+                if(nodes%5==0) sb.append("\n   ");
+                sb.append("[").append(node.x).append(",").append(node.y).append(",1]");
+                ++nodes;
+            } else {
+                for(int i = 0; i<8; ++i)
+                    if(node.nodes[i]!=null) {
+                        HighwayNode next = node.nodes[i];
+                        if(nodes>0) sb.append(',');
+                        if(nodes%5==0) sb.append("\n   ");
+                        sb.append("[")
+                          .append(node.x).append(",").append(node.y).append(",")
+                          .append(next.x).append(",").append(next.y);
+                        if(node.waystone) sb.append(",1");
+                        sb.append("]");
+                        ++nodes;
+                    }
+            }
+        }
+        sb.append("\n];\n");
         sb.append("var timestamp = ").append(System.currentTimeMillis()).append(";\n");
         try(final OutputStream out = Files.newOutputStream(path.resolve("config.js"),new OpenOption[0])) {
             out.write(sb.toString().getBytes(StandardCharsets.UTF_8));

@@ -46,6 +46,7 @@
 	function MapLoader(map,mapImage) {
 		this.map = map;
 		this.mapImage = mapImage;
+		map.mapImage = mapImage;
 		this.load = function() {
 			let img = new Image();
 			img.mapImage = this.mapImage;
@@ -53,7 +54,7 @@
 			img.onload = function() {
 				this.mapImage.img = this;
 				this.mapImage.loaded = true;
-				this.loader.map.signal(this.mapImage);
+				this.loader.map.draw();
 			}
 			let fail = function() {
 				this.mapImage.attempts++;
@@ -77,6 +78,7 @@
 
 	function Map(config,deeds,focusZones,guardTowers) {
 		this.config      = config;
+		this.mapImage    = null;
 		this.deeds       = deeds;
 		this.focusZones  = focusZones;
 		this.guardTowers = guardTowers;
@@ -216,9 +218,33 @@
 			return true;
 		}
 
-		this.signal = function(mapImage) {
-			this.config.ctx.drawImage(mapImage.img,0,0);
-			this.config.mapFile.href = mapImage.url;
+		this.draw = function() {
+			if(this.mapImage===null) return;
+			let ctx = this.config.ctx;
+			ctx.drawImage(this.mapImage.img,0,0);
+			this.config.mapFile.href = this.mapImage.url;
+			if(this.showHighways) {
+				ctx.strokeStyle = "#cccc00";
+				ctx.lineWidth = 2;
+				ctx.beginPath();
+				for(let i=0; i<highwayNodes.length; ++i) {
+					let n = highwayNodes[i];
+					if(n.length>=4) {
+						ctx.moveTo(n[0],n[1]);
+						ctx.lineTo(n[2],n[3]);
+					}
+				}
+				ctx.stroke();
+				ctx.fillStyle = "#cc6600";
+				ctx.beginPath();
+				for(let i=0; i<highwayNodes.length; ++i) {
+					let n = highwayNodes[i];
+					if(n.length==3 || n.length==5) {
+						ctx.fillRect(n[0]-1,n[1]-1,2,2);
+					}
+				}
+				ctx.stroke();
+			}
 		}
 
 		this.go = function(x,y) {
@@ -392,6 +418,7 @@
 				let checked = map.config.layers[key].checked;
 				map[key] = checked;
 				if(key=='showDeeds' || key=='showGuardTowers') map.updateMarkers();
+				else if(key=='showHighways') map.draw();
 			});
 		}
 
@@ -597,5 +624,3 @@
 	config.map = map;
 
 })(typeof window === 'undefined' ? this : window);
-
-
