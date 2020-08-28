@@ -6,12 +6,16 @@ import com.wurmonline.server.support.JSONException;
 import com.wurmonline.server.support.JSONObject;
 import com.wurmonline.server.support.JSONTokener;
 import net.spirangle.mapviewer.Config;
+import net.spirangle.mapviewer.Renderer;
 
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.FileAttribute;
 import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -21,7 +25,8 @@ public final class ZoneInfo {
 
     private static long PLANTED = 1<<Permissions.Allow.PLANTED.getBit();
 
-    private static final int[] adjacentX = { -1,0,1,-1,1,-1,0,1 }; // Num-Pad: 1,2,3,4,6,7,8,9
+    // Num-Pad: 1,2,3,4,6,7,8,9
+    private static final int[] adjacentX = { -1,0,1,-1,1,-1,0,1 };
     private static final int[] adjacentY = { 1,1,1,0,0,-1,-1,-1 };
 
     private Server server;
@@ -32,7 +37,9 @@ public final class ZoneInfo {
     private final List<Kingdom> kingdoms;
     private final List<GuardTower> guardTowers;
     private final Map<Tile,BridgePart> bridgeParts;
-    private final List<HighwayNode> hwNodes;
+    private final List<HighwayNode> highwayNodes;
+    private final List<HighwayNode> bridgeNodes;
+    private final List<HighwayNode> tunnelNodes;
 
     private ZoneInfo() {
         this.server = null;
@@ -43,7 +50,9 @@ public final class ZoneInfo {
         this.kingdoms = new ArrayList<>();
         this.guardTowers = new ArrayList<>();
         this.bridgeParts = new HashMap<>();
-        this.hwNodes = new ArrayList<>();
+        this.highwayNodes = new ArrayList<>();
+        this.bridgeNodes = new ArrayList<>();
+        this.tunnelNodes = new ArrayList<>();
     }
 
     public Map<String,PlayerData> getPlayersData() {
@@ -70,8 +79,16 @@ public final class ZoneInfo {
         return this.guardTowers;
     }
 
-    public List<HighwayNode> getHwNodes() {
-        return this.hwNodes;
+    public List<HighwayNode> getHighwayNodes() {
+        return this.highwayNodes;
+    }
+
+    public List<HighwayNode> getBridgeNodes() {
+        return this.bridgeNodes;
+    }
+
+    public List<HighwayNode> getTunnelNodes() {
+        return this.tunnelNodes;
     }
 
     public Map<Tile,BridgePart> getBridgeParts() {
@@ -81,7 +98,7 @@ public final class ZoneInfo {
     public static ZoneInfo load(final Config config) throws SQLException, IOException {
         final Path temp = Paths.get("temp",new String[0]);
         if(Files.notExists(temp,new LinkOption[0])) {
-            Files.createDirectory(temp,(FileAttribute<?>[])new FileAttribute[0]);
+            Files.createDirectory(temp,new FileAttribute[0]);
         }
 
         logger.log(Level.INFO,"Copying login database");
@@ -110,8 +127,6 @@ public final class ZoneInfo {
         final List<FocusZone> focusZones = info.getFocusZones();
         final List<Kingdom> kingdoms = info.getKingdoms();
         final List<GuardTower> guardTowers = info.getGuardTowers();
-        final List<HighwayNode> hwNodes = info.getHwNodes();
-        final Map<Tile,HighwayNode> hwNodesMap = new HashMap<>();
 
         final Connection loginConnection = DriverManager.getConnection("jdbc:sqlite:temp/wurmlogin.db");
         final Connection zonesConnection = DriverManager.getConnection("jdbc:sqlite:temp/wurmzones.db");
@@ -231,9 +246,9 @@ public final class ZoneInfo {
         final ResultSet guardTowerItemsResultSet = guardTowerItemsStatement.executeQuery();
         while(guardTowerItemsResultSet.next()) {
             final int t = guardTowerItemsResultSet.getInt("TEMPLATEID");
-            final int x = guardTowerItemsResultSet.getInt("POSX");
-            final int y = guardTowerItemsResultSet.getInt("POSY");
-            final float z = guardTowerItemsResultSet.getFloat("POSZ");
+            final int x = guardTowerItemsResultSet.getInt("POSX")/4;
+            final int y = guardTowerItemsResultSet.getInt("POSY")/4;
+            final int z = (int)Math.ceil(guardTowerItemsResultSet.getFloat("POSZ")*10.0f);
             final long creationDate = guardTowerItemsResultSet.getLong("CREATIONDATE");
             final long lastOwnerId = guardTowerItemsResultSet.getLong("LASTOWNERID");
             final int a = guardTowerItemsResultSet.getInt("AUXDATA");
@@ -241,73 +256,7 @@ public final class ZoneInfo {
             String owner = "";
             final PlayerData pd = playersDataById.get(lastOwnerId);
             if(pd!=null) owner = pd.getName();
-            guardTowers.add(new GuardTower(owner,creationDate,a,x/4,y/4,Math.round(z*10.0f),desc));
-        }
-
-        logger.log(Level.INFO,"Loading highways");
-        final PreparedStatement highwayItemsStatement = itemsConnection.prepareStatement("SELECT TEMPLATEID,POSX,POSY,AUXDATA,SETTINGS FROM ITEMS WHERE TEMPLATEID IN (?,?);");
-        highwayItemsStatement.setLong(1,ItemList.catseye);
-        highwayItemsStatement.setLong(2,ItemList.waystone);
-        final ResultSet highwayItemsResultSet = highwayItemsStatement.executeQuery();
-        while(highwayItemsResultSet.next()) {
-            final int t = highwayItemsResultSet.getInt("TEMPLATEID");
-            final int x = highwayItemsResultSet.getInt("POSX");
-            final int y = highwayItemsResultSet.getInt("POSY");
-            final int a = highwayItemsResultSet.getInt("AUXDATA");
-            final long s = highwayItemsResultSet.getLong("SETTINGS");
-            if(x>0 && y>0 & a!=0 && (s&PLANTED)!=0L) {
-                Tile tile = new Tile(x/4,y/4);
-                hwNodesMap.put(tile,new HighwayNode(x/4,y/4,t==ItemList.waystone));
-            }
-        }
-        logger.log(Level.INFO,"Linking all highway nodes");
-        for(final Map.Entry<Tile,HighwayNode> entry : hwNodesMap.entrySet()) {
-            HighwayNode n = entry.getValue();
-            for(int i=0; i<8; ++i) {
-                n.nodes[i] = hwNodesMap.get(new Tile(n.x+adjacentX[i],n.y+adjacentY[i]));
-                if(n.nodes[i]!=null) n.nodeCount++;
-            }
-        }
-        logger.log(Level.INFO,"Unlinking highway corner nodes");
-        for(final Map.Entry<Tile,HighwayNode> entry : hwNodesMap.entrySet()) {
-            HighwayNode n = entry.getValue();
-            if(n.nodes[0]!=null && n.nodes[1]!=null) unlinkHighwayCornerDiagonal(n,0,1,3);
-            else if(n.nodes[2]!=null && n.nodes[1]!=null) unlinkHighwayCornerDiagonal(n,2,1,4);
-            else if(n.nodeCount==2) {
-                if(n.nodes[0]!=null && n.nodes[2]!=null) unlinkHighwayCorner(n,0,2,4);
-                else if(n.nodes[2]!=null && n.nodes[7]!=null) unlinkHighwayCorner(n,2,7,6);
-            }
-        }
-        logger.log(Level.INFO,"Unlinking highway nodes in a straight line");
-        for(final Map.Entry<Tile,HighwayNode> entry : hwNodesMap.entrySet()) {
-            HighwayNode n = entry.getValue();
-            if(n.nodeCount==0) continue;
-            for(int i=0; i<8; ++i)
-                if(n.nodes[i]!=null) {
-                    HighwayNode a = n.nodes[i];
-                    for(HighwayNode b; a.nodes[i]!=null; a=b) {
-                        b = a.nodes[i];
-                        a.nodes[i] = null;
-                        a.nodes[7-i] = null;
-                        a.nodeCount -= 2;
-                    }
-                    n.nodes[i] = a;
-                    a.nodes[7-i] = n;
-                }
-        }
-        logger.log(Level.INFO,"Removing double links and unlinked highway nodes (except waystones)");
-        Iterator<Map.Entry<Tile,HighwayNode>> iterator = hwNodesMap.entrySet().iterator();
-        while(iterator.hasNext()) {
-            Map.Entry<Tile,HighwayNode> entry = iterator.next();
-            HighwayNode n = entry.getValue();
-            if(n.nodeCount>0 && !n.waystone) {
-                for(int i = 0; i<8; ++i)
-                    if(n.nodes[i]!=null && n.nodes[i].nodes[7-i]==n) {
-                        n.nodes[i] = null;
-                        n.nodeCount--;
-                    }
-            }
-            if(n.waystone || n.nodeCount>0) hwNodes.add(n);
+            guardTowers.add(new GuardTower(owner,creationDate,a,x,y,z,desc));
         }
 
         modsupportConnection.close();
@@ -317,50 +266,59 @@ public final class ZoneInfo {
         return info;
     }
 
-    private static void unlinkHighwayCorner(HighwayNode n,int d1,int d2,int c) {
-        n.nodes[d1].nodes[c] = n.nodes[d2];
-        n.nodes[d2].nodes[7-c] = n.nodes[d1];
-        n.nodes[d1].nodes[7-d1] = null;
-        n.nodes[d2].nodes[7-d2] = null;
-        n.nodes[d1] = null;
-        n.nodes[d2] = null;
-        n.nodeCount = 0;
-    }
+    public void loadHighways(final Renderer renderer) throws SQLException {
+        final HighwayManager highwayManager = new HighwayManager(highwayNodes);
+        final HighwayManager bridgeManager = new HighwayManager(bridgeNodes);
+        final HighwayManager tunnelManager = new HighwayManager(tunnelNodes);
+        final Map<Tile,HighwayNode> hwNodesMap = new HashMap<>();
 
-    private static void unlinkHighwayCornerDiagonal(HighwayNode n,int d,int c1,int c2) {
-        HighwayNode nc1 = n.nodes[c1];
-        if(nc1.nodeCount==2) {
-            nc1.nodes[7-c1] = null;
-            nc1.nodes[c2] = null;
-            nc1.nodeCount = 0;
-            n.nodes[c1] = null;
-            n.nodeCount--;
-            n.nodes[d].nodes[7-c2] = null;
-            n.nodes[d].nodeCount--;
-        } else if((nc1.nodeCount==4 && nc1.nodes[d]!=null && nc1.nodes[7-d]!=null) ||
-                  (nc1.nodeCount==3 && (nc1.nodes[d]!=null || nc1.nodes[7-d]!=null))) {
-            nc1.nodes[7-c1] = null;
-            nc1.nodes[c2] = null;
-            if(nc1.nodes[d]!=null) {
-                nc1.nodes[d].nodes[7-d] = null;
-                nc1.nodes[d].nodeCount--;
-                nc1.nodes[d] = null;
+        final Connection itemsConnection = DriverManager.getConnection("jdbc:sqlite:temp/wurmitems.db");
+
+        logger.log(Level.INFO,"Loading highways");
+        final PreparedStatement highwayItemsStatement = itemsConnection.prepareStatement("SELECT TEMPLATEID,POSX,POSY,POSZ,AUXDATA,ONBRIDGE,SETTINGS FROM ITEMS WHERE TEMPLATEID IN (?,?);");
+        highwayItemsStatement.setLong(1,ItemList.catseye);
+        highwayItemsStatement.setLong(2,ItemList.waystone);
+        final ResultSet highwayItemsResultSet = highwayItemsStatement.executeQuery();
+        while(highwayItemsResultSet.next()) {
+            final int t = highwayItemsResultSet.getInt("TEMPLATEID");
+            final int x = highwayItemsResultSet.getInt("POSX")/4;
+            final int y = highwayItemsResultSet.getInt("POSY")/4;
+            final int z = (int)Math.ceil(highwayItemsResultSet.getFloat("POSZ")*10.0f);
+            final int a = highwayItemsResultSet.getInt("AUXDATA");
+            final long b = highwayItemsResultSet.getInt("ONBRIDGE");
+            final long s = highwayItemsResultSet.getLong("SETTINGS");
+            if(x>0 && y>0 & a!=0 && (s&PLANTED)!=0L) {
+                Tile tile = new Tile(x,y);
+                HighwayNode node = new HighwayNode(x,y,z,t==ItemList.waystone,b!=-10L,renderer.isOnSurface(x,y,z));
+                hwNodesMap.put(tile,node);
+                if(!node.surfaced) tunnelNodes.add(node);
+                else if(node.onBridge) bridgeNodes.add(node);
+                else highwayNodes.add(node);
             }
-            if(nc1.nodes[7-d]!=null) {
-                nc1.nodes[7-d].nodes[d] = null;
-                nc1.nodes[7-d].nodeCount--;
-                nc1.nodes[7-d] = null;
-            }
-            nc1.nodeCount = 0;
-            n.nodes[c1] = null;
-            n.nodeCount--;
-            n.nodes[d].nodes[7-c2] = null;
-            n.nodes[d].nodeCount--;
-        } else {
-            n.nodes[d].nodes[7-d] = null;
-            n.nodes[d].nodeCount--;
-            n.nodes[d] = null;
-            n.nodeCount--;
         }
+        logger.log(Level.INFO,"Linking all highway nodes");
+        for(final Map.Entry<Tile,HighwayNode> entry : hwNodesMap.entrySet()) {
+            HighwayNode n = entry.getValue();
+            for(int i=0; i<8; ++i) {
+                HighwayNode a = hwNodesMap.get(new Tile(n.x+adjacentX[i],n.y+adjacentY[i]));
+                if(a!=null && n.onBridge==a.onBridge && n.surfaced==a.surfaced) {
+                    n.nodes[i] = a;
+                    n.nodeCount++;
+                }
+            }
+        }
+        highwayManager.unlinkCornerNodes();
+        highwayManager.unlinkNodesInLine();
+        highwayManager.removeDoubleOrUnlinkedNodes();
+
+        bridgeManager.unlinkCornerNodes();
+        bridgeManager.unlinkNodesInLine();
+        bridgeManager.removeDoubleOrUnlinkedNodes();
+
+        tunnelManager.unlinkCornerNodes();
+        tunnelManager.unlinkNodesInLine();
+        tunnelManager.removeDoubleOrUnlinkedNodes();
+
+        itemsConnection.close();
     }
 }

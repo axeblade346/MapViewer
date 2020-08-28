@@ -61,7 +61,7 @@ public final class Renderer {
         this.bridgeParts.putAll(bridgeParts);
         final Path temp = Paths.get("temp",new String[0]);
         if(Files.notExists(temp,new LinkOption[0])) {
-            Files.createDirectory(temp,(FileAttribute<?>[])new FileAttribute[0]);
+            Files.createDirectory(temp,new FileAttribute[0]);
         }
         final Path map = temp.resolve("top_layer.map");
         Files.deleteIfExists(map);
@@ -240,5 +240,11 @@ public final class Renderer {
         try(final OutputStream out = Files.newOutputStream(path,new OpenOption[0])) {
             ImageIO.write(img,"PNG",out);
         }
+    }
+
+    public boolean isOnSurface(final int xTile,final int yTile,final int z) {
+        logger.info("isOnSurface("+heightData[xTile][yTile]+" <= "+z+")");
+        return heightData[xTile][yTile]<=z || heightData[xTile+1][yTile]<=z ||
+               heightData[xTile][yTile+1]<=z || heightData[xTile+1][yTile+1]<=z;
     }
 }

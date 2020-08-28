@@ -223,28 +223,34 @@
 			let ctx = this.config.ctx;
 			ctx.drawImage(this.mapImage.img,0,0);
 			this.config.mapFile.href = this.mapImage.url;
-			if(this.showHighways) {
-				ctx.strokeStyle = "#cccc00";
-				ctx.lineWidth = 2;
-				ctx.beginPath();
-				for(let i=0; i<highwayNodes.length; ++i) {
-					let n = highwayNodes[i];
-					if(n.length>=4) {
-						ctx.moveTo(n[0],n[1]);
-						ctx.lineTo(n[2],n[3]);
-					}
+			if(this.showHighways) this.drawHighwayNodes(highwayNodes,"#cccc00","#cc6600");
+			if(this.showBridges) this.drawHighwayNodes(bridgeNodes,"#ff9933","#cc6600");
+			if(this.showTunnels) this.drawHighwayNodes(tunnelNodes,"#00cccc","#cc6600");
+		}
+
+		this.drawHighwayNodes = function(nodes,highwayColor,waystoneColor) {
+			let ctx = this.config.ctx;
+			let y = this.mode=='isometric'? this.zoom/40 : 1;
+			ctx.strokeStyle = highwayColor;
+			ctx.lineWidth = 2;
+			ctx.beginPath();
+			for(let i=0; i<nodes.length; ++i) {
+				let n = nodes[i];
+				if(n.length>=4) {
+					ctx.moveTo(n[0],n[1]);
+					ctx.lineTo(n[2],n[3]);
 				}
-				ctx.stroke();
-				ctx.fillStyle = "#cc6600";
-				ctx.beginPath();
-				for(let i=0; i<highwayNodes.length; ++i) {
-					let n = highwayNodes[i];
-					if(n.length==3 || n.length==5) {
-						ctx.fillRect(n[0]-1,n[1]-1,2,2);
-					}
-				}
-				ctx.stroke();
 			}
+			ctx.stroke();
+			ctx.fillStyle = waystoneColor;
+			ctx.beginPath();
+			for(let i=0; i<nodes.length; ++i) {
+				let n = nodes[i];
+				if(n.length==3 || n.length==5) {
+					ctx.fillRect(n[0]-1,n[1]-1,2,2);
+				}
+			}
+			ctx.stroke();
 		}
 
 		this.go = function(x,y) {
@@ -418,7 +424,7 @@
 				let checked = map.config.layers[key].checked;
 				map[key] = checked;
 				if(key=='showDeeds' || key=='showGuardTowers') map.updateMarkers();
-				else if(key=='showHighways') map.draw();
+				else if(key=='showHighways' || key=='showBridges' || key=='showTunnels') map.draw();
 			});
 		}
 
