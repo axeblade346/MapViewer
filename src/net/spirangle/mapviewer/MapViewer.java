@@ -40,6 +40,7 @@ public final class MapViewer {
         logger.info("Loading map data");
         final ZoneInfo zoneInfo = ZoneInfo.load(config);
         final int size = renderer.load(zoneInfo);
+        zoneInfo.loadHighways(renderer);
         saveIndex(config,zoneInfo,size);
         saveConfig(config,zoneInfo,size);
         logger.info("Saving terrain map");
@@ -128,8 +129,8 @@ public final class MapViewer {
           .append("      <label><input type=\"checkbox\" id=\"layer-deeds\" />Deeds</label>\n")
           .append("      <label><input type=\"checkbox\" id=\"layer-guardtowers\" />Guard towers</label>\n")
           .append("      <label><input type=\"checkbox\" id=\"layer-highways\" />Highways</label>\n")
-          .append("      <label><input type=\"checkbox\" id=\"layer-bridges\" disabled />Bridges</label>\n")
-          .append("      <label><input type=\"checkbox\" id=\"layer-tunnels\" disabled />Tunnels</label>\n")
+          .append("      <label><input type=\"checkbox\" id=\"layer-bridges\" />Bridges</label>\n")
+          .append("      <label><input type=\"checkbox\" id=\"layer-tunnels\" />Tunnels</label>\n")
           .append("    </div>\n")
           .append("    <div class=\"panel\">\n")
           .append("      <h3>Info</h3>\n")
@@ -162,7 +163,9 @@ public final class MapViewer {
         final List<FocusZone> focusZones = zoneInfo.getFocusZones();
         final List<Kingdom> kingdoms = zoneInfo.getKingdoms();
         final List<GuardTower> guardTowers = zoneInfo.getGuardTowers();
-        final List<HighwayNode> hwNodes = zoneInfo.getHwNodes();
+        final List<HighwayNode> highwayNodes = zoneInfo.getHighwayNodes();
+        final List<HighwayNode> bridgeNodes = zoneInfo.getBridgeNodes();
+        final List<HighwayNode> tunnelNodes = zoneInfo.getTunnelNodes();
         int y;
         int x = y = size/2;
         for(final Deed deed : deeds) {
@@ -286,12 +289,27 @@ public final class MapViewer {
               .append(guardTower.getDescription().replace("'","\\'")).append("'));\n");
         }
         sb.append("highwayNodes = [");
+        writeHighwayNodes(highwayNodes,sb);
+        sb.append("\n];\n");
+        sb.append("bridgeNodes = [");
+        writeHighwayNodes(bridgeNodes,sb);
+        sb.append("\n];\n");
+        sb.append("tunnelNodes = [");
+        writeHighwayNodes(tunnelNodes,sb);
+        sb.append("\n];\n");
+        sb.append("var timestamp = ").append(System.currentTimeMillis()).append(";\n");
+        try(final OutputStream out = Files.newOutputStream(path.resolve("config.js"),new OpenOption[0])) {
+            out.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    private static void writeHighwayNodes(List<HighwayNode> highwayNodes,StringBuilder sb) {
         int nodes = 0;
-        for(final HighwayNode node : hwNodes) {
+        for(final HighwayNode node : highwayNodes) {
             if(node.nodeCount==0) {
                 if(nodes>0) sb.append(',');
                 if(nodes%5==0) sb.append("\n   ");
-                sb.append("[").append(node.x).append(",").append(node.y).append(",1]");
+                sb.append("[").append(node.x).append(",").append(node.y).append(",").append(node.z).append(",1]");
                 ++nodes;
             } else {
                 for(int i = 0; i<8; ++i)
@@ -300,18 +318,13 @@ public final class MapViewer {
                         if(nodes>0) sb.append(',');
                         if(nodes%5==0) sb.append("\n   ");
                         sb.append("[")
-                          .append(node.x).append(",").append(node.y).append(",")
-                          .append(next.x).append(",").append(next.y);
+                          .append(node.x).append(",").append(node.y).append(",").append(node.z).append(",")
+                          .append(next.x).append(",").append(next.y).append(",").append(next.z);
                         if(node.waystone) sb.append(",1");
                         sb.append("]");
                         ++nodes;
                     }
             }
-        }
-        sb.append("\n];\n");
-        sb.append("var timestamp = ").append(System.currentTimeMillis()).append(";\n");
-        try(final OutputStream out = Files.newOutputStream(path.resolve("config.js"),new OpenOption[0])) {
-            out.write(sb.toString().getBytes(StandardCharsets.UTF_8));
         }
     }
 }
