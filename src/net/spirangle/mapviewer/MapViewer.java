@@ -309,7 +309,7 @@ public final class MapViewer {
             if(node.nodeCount==0) {
                 if(nodes>0) sb.append(',');
                 if(nodes%5==0) sb.append("\n   ");
-                sb.append("[").append(node.x).append(",").append(node.y).append(",1]");
+                sb.append("[").append(node.x).append(",").append(node.y).append(",").append(node.z).append(",1]");
                 ++nodes;
             } else {
                 for(int i = 0; i<8; ++i)
@@ -318,8 +318,8 @@ public final class MapViewer {
                         if(nodes>0) sb.append(',');
                         if(nodes%5==0) sb.append("\n   ");
                         sb.append("[")
-                          .append(node.x).append(",").append(node.y).append(",")
-                          .append(next.x).append(",").append(next.y);
+                          .append(node.x).append(",").append(node.y).append(",").append(node.z).append(",")
+                          .append(next.x).append(",").append(next.y).append(",").append(next.z);
                         if(node.waystone) sb.append(",1");
                         sb.append("]");
                         ++nodes;
