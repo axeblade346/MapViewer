@@ -243,7 +243,6 @@ public final class Renderer {
     }
 
     public boolean isOnSurface(final int xTile,final int yTile,final int z) {
-        logger.info("isOnSurface("+heightData[xTile][yTile]+" <= "+z+")");
         return heightData[xTile][yTile]<=z || heightData[xTile+1][yTile]<=z ||
                heightData[xTile][yTile+1]<=z || heightData[xTile+1][yTile+1]<=z;
     }
