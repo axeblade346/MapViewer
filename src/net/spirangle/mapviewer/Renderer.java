@@ -92,25 +92,27 @@ public final class Renderer {
             }
         }
 
-        final Path originalMap = temp.resolve("original_top_layer.map");
-        Files.deleteIfExists(originalMap);
-        Files.copy(this.config.getOriginalMapDirectory().resolve("top_layer.map"),originalMap,new CopyOption[0]);
-        try(final DataInputStream in = new DataInputStream(new BufferedInputStream(Files.newInputStream(originalMap,new OpenOption[0]),65536))) {
-            in.readLong();
-            in.readByte();
-            in.readByte();
-            in.skipBytes(1014);
-            this.originalTypeData = new int[this.size][this.size];
-            this.originalMetaData = new int[this.size][this.size];
-            this.originalHeightData = new int[this.size][this.size];
-            for(int y = 0; y<this.size; ++y) {
-                for(int x = 0; x<this.size; ++x) {
-                    final int tileType = in.read()&0xFF;
-                    final int meta = in.read()&0xFF;
-                    final int height = in.readShort();
-                    this.originalTypeData[x][y] = tileType;
-                    this.originalMetaData[x][y] = meta;
-                    this.originalHeightData[x][y] = height;
+        if(this.config.usePlayerSettings()) {
+            final Path originalMap = temp.resolve("original_top_layer.map");
+            Files.deleteIfExists(originalMap);
+            Files.copy(this.config.getOriginalMapDirectory().resolve("top_layer.map"),originalMap,new CopyOption[0]);
+            try(final DataInputStream in = new DataInputStream(new BufferedInputStream(Files.newInputStream(originalMap,new OpenOption[0]),65536))) {
+                in.readLong();
+                in.readByte();
+                in.readByte();
+                in.skipBytes(1014);
+                this.originalTypeData = new int[this.size][this.size];
+                this.originalMetaData = new int[this.size][this.size];
+                this.originalHeightData = new int[this.size][this.size];
+                for(int y = 0; y<this.size; ++y) {
+                    for(int x = 0; x<this.size; ++x) {
+                        final int tileType = in.read()&0xFF;
+                        final int meta = in.read()&0xFF;
+                        final int height = in.readShort();
+                        this.originalTypeData[x][y] = tileType;
+                        this.originalMetaData[x][y] = meta;
+                        this.originalHeightData[x][y] = height;
+                    }
                 }
             }
         }
@@ -126,12 +128,14 @@ public final class Renderer {
                 renderTile(pixels,type,x,y,this.typeData,this.metaData,this.heightData);
             }
         }
-        for(Deed deed : this.deeds) {
+        if(this.config.usePlayerSettings()) {
+            for(Deed deed : this.deeds) {
 //            Renderer.LOGGER.log(Level.INFO,"Deed "+deed.getName()+", visibility: "+deed.getVisibility());
-            if(deed.getVisibility() >= 3) {
-                for(int x = deed.getSx()-5; x<=deed.getEx()+5; ++x) {
-                    for(int y = deed.getSy()-5; y<=deed.getEy()+5; ++y) {
-                        renderTile(pixels,type,x,y,this.originalTypeData,this.originalMetaData,this.originalHeightData);
+                if(deed.getVisibility() >= 3) {
+                    for(int x = deed.getSx()-5; x<=deed.getEx()+5; ++x) {
+                        for(int y = deed.getSy()-5; y<=deed.getEy()+5; ++y) {
+                            renderTile(pixels,type,x,y,this.originalTypeData,this.originalMetaData,this.originalHeightData);
+                        }
                     }
                 }
             }

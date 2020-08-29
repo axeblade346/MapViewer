@@ -133,27 +133,31 @@ public final class ZoneInfo {
         final Connection itemsConnection = DriverManager.getConnection("jdbc:sqlite:temp/wurmitems.db");
         final Connection modsupportConnection = DriverManager.getConnection("jdbc:sqlite:temp/modsupport.db");
 
-        logger.log(Level.INFO,"Loading players data");
-        final PreparedStatement playersDataStatement = modsupportConnection.prepareStatement("SELECT WURMID,NAME,DATA FROM PLAYERSDATA;");
-        final ResultSet playersDataResultSet = playersDataStatement.executeQuery();
-        while(playersDataResultSet.next()) {
-            final long wurmId = playersDataResultSet.getLong("WURMID");
-            final String name = playersDataResultSet.getString("NAME");
-            final String data = playersDataResultSet.getString("DATA");
-            try {
-                JSONTokener jt = new JSONTokener(data);
-                JSONObject json = new JSONObject(jt);
-                final PlayerData pd = new PlayerData(wurmId,name,json);
-                playersData.put(name,pd);
-                playersDataById.put(wurmId,pd);
-            } catch(JSONException e) {
-                logger.log(Level.WARNING,"Failed to load data for "+name+": "+e.getMessage(),e);
+        if(config.usePlayerSettings()) {
+            logger.log(Level.INFO,"Loading players data");
+            final PreparedStatement playersDataStatement = modsupportConnection.prepareStatement("SELECT WURMID,NAME,DATA FROM PLAYERSDATA;");
+            final ResultSet playersDataResultSet = playersDataStatement.executeQuery();
+            while(playersDataResultSet.next()) {
+                final long wurmId = playersDataResultSet.getLong("WURMID");
+                final String name = playersDataResultSet.getString("NAME");
+                final String data = playersDataResultSet.getString("DATA");
+                try {
+                    JSONTokener jt = new JSONTokener(data);
+                    JSONObject json = new JSONObject(jt);
+                    final PlayerData pd = new PlayerData(wurmId,name,json);
+                    playersData.put(name,pd);
+                    playersDataById.put(wurmId,pd);
+                } catch(JSONException e) {
+                    logger.log(Level.WARNING,"Failed to load data for "+name+": "+e.getMessage(),e);
+                }
             }
         }
 
         logger.log(Level.INFO,"Loading server");
-        final PreparedStatement serverStatement = loginConnection.prepareStatement("SELECT * FROM SERVERS WHERE `SERVER` == ?;");
-        serverStatement.setInt(1,config.getServerId());
+        String serversSql = "SELECT * FROM SERVERS";
+        if(config.getServerId()>0) serversSql += " WHERE `SERVER`=?";
+        final PreparedStatement serverStatement = loginConnection.prepareStatement(serversSql+";");
+        if(config.getServerId()>0) serverStatement.setInt(1,config.getServerId());
         final ResultSet serverResultSet = serverStatement.executeQuery();
         if(serverResultSet.next()) {
             final int id = serverResultSet.getInt("SERVER");
@@ -191,8 +195,8 @@ public final class ZoneInfo {
         }
 
         logger.log(Level.INFO,"Loading deeds and tokens");
-        final PreparedStatement tokenStatement = itemsConnection.prepareStatement("SELECT * FROM ITEMS WHERE `WURMID` == ?;");
-        final PreparedStatement deedStatement = zonesConnection.prepareStatement("SELECT * FROM VILLAGES WHERE `DISBANDED` == 0;");
+        final PreparedStatement tokenStatement = itemsConnection.prepareStatement("SELECT * FROM ITEMS WHERE `WURMID`=?;");
+        final PreparedStatement deedStatement = zonesConnection.prepareStatement("SELECT * FROM VILLAGES WHERE `DISBANDED`=0;");
         final ResultSet deedResultSet = deedStatement.executeQuery();
         while(deedResultSet.next()) {
             final String name = deedResultSet.getString("NAME");
@@ -242,7 +246,11 @@ public final class ZoneInfo {
         }
 
         logger.log(Level.INFO,"Loading guard towers");
-        final PreparedStatement guardTowerItemsStatement = itemsConnection.prepareStatement("SELECT TEMPLATEID,POSX,POSY,POSZ,CREATIONDATE,LASTOWNERID,AUXDATA,DESCRIPTION FROM ITEMS WHERE TEMPLATEID IN (384,430,528,638);");
+        final PreparedStatement guardTowerItemsStatement = itemsConnection.prepareStatement("SELECT TEMPLATEID,POSX,POSY,POSZ,CREATIONDATE,LASTOWNERID,AUXDATA,DESCRIPTION FROM ITEMS WHERE TEMPLATEID IN (?,?,?,?);");
+        guardTowerItemsStatement.setInt(1,ItemList.guardTower);
+        guardTowerItemsStatement.setInt(2,ItemList.guardTowerHots);
+        guardTowerItemsStatement.setInt(3,ItemList.guardTowerMol);
+        guardTowerItemsStatement.setInt(4,ItemList.guardTowerFreedom);
         final ResultSet guardTowerItemsResultSet = guardTowerItemsStatement.executeQuery();
         while(guardTowerItemsResultSet.next()) {
             final int t = guardTowerItemsResultSet.getInt("TEMPLATEID");

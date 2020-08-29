@@ -83,30 +83,30 @@ public final class MapViewer {
         }
         sb.append("<!DOCTYPE html>\n")
           .append("<html>\n")
-          .append("<head>\n");
-        if(php) {
-            sb.append("<title><?= $serverName ?> - Map</title>\n");
-        } else {
-            sb.append("<title>"+serverName+" - Map</title>\n");
-        }
-        sb.append("<meta charset=\"UTF-8\">\n")
+          .append("<head>\n")
+          .append("<title>");
+        if(php) sb.append("<?= $serverName ?>");
+        else sb.append(serverName);
+        sb.append(" - Map</title>\n")
+          .append("<meta charset=\"UTF-8\">\n")
           .append("<link rel=\"stylesheet\" type=\"text/css\" href=\"main.css\"/>\n")
           .append("</head>\n")
           .append("<body>\n")
-          .append("<main id=\"container\">\n");
-        if(php) {
-            sb.append("  <canvas id=\"map\" width=\"<?= $mapSize ?>\" height=\"<?= $mapSize ?>\"></canvas>\n");
-        } else {
-            sb.append("  <canvas id=\"map\" width=\""+size+"\" height=\""+size+"\"></canvas>\n");
-        }
+          .append("<main id=\"container\">\n")
+          .append("  <canvas id=\"map\" width=\"");
+        if(php) sb.append("<?= $mapSize ?>");
+        else sb.append(size);
+        sb.append("\" height=\"");
+        if(php) sb.append("<?= $mapSize ?>").append("\"></canvas>\n");
+        else sb.append(size);
+        sb.append("\"></canvas>\n");
         sb.append("  <div id=\"markers\"></div>\n")
-          .append("  <div id=\"sidebar\">\n");
-        if(php) {
-            sb.append("    <h2><a href=\"/\"><?= $serverName ?></a></h2>\n");
-        } else {
-            sb.append("    <h2><a href=\"/\">"+serverName+"</a></h2>\n");
-        }
-        sb.append("    <div id=\"zoom\" class=\"panel\">\n")
+          .append("  <div id=\"sidebar\">\n")
+          .append("    <h2><a href=\"").append(config.getWebPageURL()).append("\">");
+        if(php) sb.append("<?= $serverName ?>");
+        else sb.append(serverName);
+        sb.append("</a></h2>\n")
+          .append("    <div id=\"zoom\" class=\"panel\">\n")
           .append("      <h3>Zoom</h3>\n")
           .append("      <div id=\"zoom-in\">+</div>\n")
           .append("      <div id=\"zoom-out\">-</div>\n")
@@ -151,6 +151,7 @@ public final class MapViewer {
           .append("<script type=\"text/javascript\" src=\"map.js\"></script>\n")
           .append("</body>\n")
           .append("</html>\n");
+
         try(final OutputStream out = Files.newOutputStream(path,new OpenOption[0])) {
             out.write(sb.toString().getBytes(StandardCharsets.UTF_8));
         }
