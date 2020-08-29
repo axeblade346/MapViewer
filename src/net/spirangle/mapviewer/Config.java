@@ -24,6 +24,7 @@ public final class Config {
     }
 
     private String serverName;
+    private String webPageUrl;
     private int serverId;
     private Path mapDirectory;
     private Path originalMapDirectory;
@@ -32,6 +33,7 @@ public final class Config {
     private boolean showDeeds;
     private boolean showDeedBorders3d;
     private boolean showDeedBordersFlat;
+    private boolean usePlayerSettings;
 
     private Config() {
 
@@ -42,17 +44,19 @@ public final class Config {
         try(InputStream stream = Files.newInputStream(path)) {
             Properties properties = new Properties();
             properties.load(stream);
-            serverName = getProperty(properties,"server-name",suffix);
+            serverName = getProperty(properties,"server-name",suffix,"Wurm Server");
             logger.info("Server Name: "+serverName);
-            serverId = Integer.parseInt(getProperty(properties,"server-id",suffix));
+            webPageUrl = getProperty(properties,"web-page-url",suffix,"/");
+            logger.info("Web Page URL: "+webPageUrl);
+            serverId = Integer.parseInt(getProperty(properties,"server-id",suffix,"-10"));
             logger.info("Server ID: "+serverId);
-            mapDirectory = Paths.get(getProperty(properties,"map-directory",suffix),new String[0]);
+            mapDirectory = Paths.get(getProperty(properties,"map-directory",suffix,serverName),new String[0]);
             logger.info("Map directory: "+mapDirectory);
-            originalMapDirectory = Paths.get(getProperty(properties,"original-map-directory",suffix),new String[0]);
+            originalMapDirectory = Paths.get(getProperty(properties,"original-map-directory",suffix,serverName+"_original"),new String[0]);
             logger.info("Map directory (original): "+originalMapDirectory);
-            outputDirectory = Paths.get(getProperty(properties,"output-directory",suffix),new String[0]);
+            outputDirectory = Paths.get(getProperty(properties,"output-directory",suffix,"mapviewer"),new String[0]);
             logger.info("Output directory: "+outputDirectory);
-            String of = getProperty(properties,"output-format",suffix);
+            String of = getProperty(properties,"output-format",suffix,"HTML");
             outputFormat = OutputFormat.HTML;
             if(of!=null) {
                 switch(of.toUpperCase()) {
@@ -65,24 +69,32 @@ public final class Config {
                 }
             }
             logger.info("Output Format: "+outputFormat);
-            showDeeds = Boolean.parseBoolean(getProperty(properties,"show-deeds",suffix));
+            showDeeds = Boolean.parseBoolean(getProperty(properties,"show-deeds",suffix,"true"));
             logger.info("Show deeds: "+showDeeds);
-            showDeedBorders3d = Boolean.parseBoolean(getProperty(properties,"show-deed-borders-in-3d-mode",suffix));
+            showDeedBorders3d = Boolean.parseBoolean(getProperty(properties,"show-deed-borders-in-3d-mode",suffix,"false"));
             logger.info("Show deed borders (3D): "+showDeedBorders3d);
-            showDeedBordersFlat = Boolean.parseBoolean(getProperty(properties,"show-deed-borders-in-flat-mode",suffix));
+            showDeedBordersFlat = Boolean.parseBoolean(getProperty(properties,"show-deed-borders-in-flat-mode",suffix,"true"));
             logger.info("Show deed borders (flat): "+showDeedBordersFlat);
+            usePlayerSettings = Boolean.parseBoolean(getProperty(properties,"use-player-settings",suffix,"false"));
+            logger.info("Use player settings: "+usePlayerSettings);
         }
     }
 
-    private String getProperty(Properties properties,String key,String suffix) {
+    private String getProperty(Properties properties,String key,String suffix,String defaultValue) {
         String value = properties.getProperty(key+suffix);
         if((value==null || value.isEmpty()) && suffix!=null && !suffix.isEmpty())
             value = properties.getProperty(key);
+        if(value==null || value.isEmpty())
+            value = defaultValue;
         return value;
     }
 
     public String getServerName() {
         return this.serverName;
+    }
+
+    public String getWebPageURL() {
+        return this.webPageUrl;
     }
 
     public int getServerId() {
@@ -119,5 +131,9 @@ public final class Config {
 
     public boolean showDeedBordersFlat() {
         return this.showDeedBordersFlat;
+    }
+
+    public boolean usePlayerSettings() {
+        return this.usePlayerSettings;
     }
 }
