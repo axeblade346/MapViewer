@@ -246,11 +246,24 @@ public final class ZoneInfo {
         }
 
         logger.log(Level.INFO,"Loading guard towers");
-        final PreparedStatement guardTowerItemsStatement = itemsConnection.prepareStatement("SELECT TEMPLATEID,POSX,POSY,POSZ,CREATIONDATE,LASTOWNERID,AUXDATA,DESCRIPTION FROM ITEMS WHERE TEMPLATEID IN (?,?,?,?);");
-        guardTowerItemsStatement.setInt(1,ItemList.guardTower);
-        guardTowerItemsStatement.setInt(2,ItemList.guardTowerHots);
-        guardTowerItemsStatement.setInt(3,ItemList.guardTowerMol);
-        guardTowerItemsStatement.setInt(4,ItemList.guardTowerFreedom);
+        int[] guardTowerIDs = { ItemList.guardTower,ItemList.guardTowerHots,ItemList.guardTowerMol,ItemList.guardTowerFreedom };
+        if(config.getGuardTowerIDs()!=null) {
+            int[] xids = config.getGuardTowerIDs();
+            int[] ids = new int[guardTowerIDs.length+xids.length];
+            System.arraycopy(guardTowerIDs,0,ids,0,guardTowerIDs.length);
+            System.arraycopy(xids,0,ids,guardTowerIDs.length,xids.length);
+            guardTowerIDs = ids;
+        }
+        StringBuilder guardTowersSQL = new StringBuilder();
+        guardTowersSQL.append("SELECT TEMPLATEID,POSX,POSY,POSZ,CREATIONDATE,LASTOWNERID,AUXDATA,DESCRIPTION FROM ITEMS WHERE TEMPLATEID IN (");
+        for(int i=0; i<guardTowerIDs.length; ++i) {
+            if(i>0) guardTowersSQL.append(',');
+            guardTowersSQL.append('?');
+        }
+        guardTowersSQL.append(");");
+        final PreparedStatement guardTowerItemsStatement = itemsConnection.prepareStatement(guardTowersSQL.toString());
+        for(int i=0; i<guardTowerIDs.length; ++i)
+            guardTowerItemsStatement.setInt(i+1,guardTowerIDs[i]);
         final ResultSet guardTowerItemsResultSet = guardTowerItemsStatement.executeQuery();
         while(guardTowerItemsResultSet.next()) {
             final int t = guardTowerItemsResultSet.getInt("TEMPLATEID");
