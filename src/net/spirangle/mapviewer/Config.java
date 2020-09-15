@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public final class Config {
@@ -34,6 +35,7 @@ public final class Config {
     private boolean showDeedBorders3d;
     private boolean showDeedBordersFlat;
     private boolean usePlayerSettings;
+    private int[] guardTowerIDs;
 
     private Config() {
 
@@ -77,6 +79,9 @@ public final class Config {
             logger.info("Show deed borders (flat): "+showDeedBordersFlat);
             usePlayerSettings = Boolean.parseBoolean(getProperty(properties,"use-player-settings",suffix,"false"));
             logger.info("Use player settings: "+usePlayerSettings);
+            String gtids = getProperty(properties,"guard-tower-ids",suffix,null);
+            guardTowerIDs = parseIntArray(gtids);
+            logger.info("Guard tower IDs: "+gtids);
         }
     }
 
@@ -87,6 +92,21 @@ public final class Config {
         if(value==null || value.isEmpty())
             value = defaultValue;
         return value;
+    }
+
+    private int[] parseIntArray(String value) {
+        if(value==null) return null;
+        String[] strArray = value.split(",");
+        int[] intArray = new int[strArray.length];
+        for(int i=0; i<strArray.length; ++i) {
+            try {
+                intArray[i] = Integer.parseInt(strArray[i]);
+            } catch(NumberFormatException e) {
+                logger.log(Level.SEVERE,"Guard tower IDs: "+e.getMessage(),e);
+                return null;
+            }
+        }
+        return intArray;
     }
 
     public String getServerName() {
@@ -135,5 +155,9 @@ public final class Config {
 
     public boolean usePlayerSettings() {
         return this.usePlayerSettings;
+    }
+
+    public int[] getGuardTowerIDs() {
+        return this.guardTowerIDs;
     }
 }
