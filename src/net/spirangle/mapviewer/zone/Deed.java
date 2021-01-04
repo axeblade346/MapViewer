@@ -15,11 +15,13 @@ public final class Deed {
     private final int sy;
     private final int ex;
     private final int ey;
+    private final int p;
     private final int visibility;
     private int height;
 
     public Deed(final String name,final String founder,final String mayor,final long creationDate,final boolean democracy,final int kingdom,
-                final int x,final int y,final boolean permanent,final boolean pvp,final int sx,final int sy,final int ex,final int ey,final int visibility) {
+                final int x,final int y,final boolean permanent,final boolean pvp,final int sx,final int sy,final int ex,final int ey,
+                final int p,final int visibility) {
         this.height = 0;
         this.name = name;
         this.founder = founder;
@@ -35,6 +37,7 @@ public final class Deed {
         this.sy = sy;
         this.ex = ex;
         this.ey = ey;
+        this.p = p;
         this.visibility = visibility;
     }
 
@@ -100,6 +103,10 @@ public final class Deed {
 
     public int getEy() {
         return this.ey;
+    }
+
+    public int getPerimeter() {
+        return this.p;
     }
 
     public int getVisibility() {
