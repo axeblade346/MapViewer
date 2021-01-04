@@ -2,7 +2,7 @@
 
 (function(global) {
 
-	const serverInfo = '<h4>Awakening</h4>'+
+	const serverInfo = '<h4>'+config.neutralLandName+'</h4>'+
 	                   'Wurm Unlimited Server<br>';
 
 	const zoomLevels = [ 0.25, 0.375, 0.5, 0.75, 1.0, 1.25, 1.5, 2, 3, 4, 6, 8 ];
@@ -136,13 +136,15 @@
 			y = Math.round(y);
 			if(this.showDeeds===false && marker.type=='deed') marker.element.style.display = 'none';
 			else marker.element.setAttribute('style','display: block; top: '+y+'px; left: '+x+'px;');
-			if(marker.border!=undefined) {
+			if(marker.border!==undefined) {
 				let w = Math.round(((1+marker.deed.ex-marker.deed.sx)*this.zoom)-2);
 				let h = Math.round(((1+marker.deed.ey-marker.deed.sy)*this.zoom)-2);
 				let l = Math.floor(128+((marker.deed.sx-marker.deed.x-0.5)*this.zoom));
 				let t = Math.floor(128+((marker.deed.sy-marker.deed.y-0.5)*this.zoom));
+				let p = (marker.deed.p+5)*this.zoom;
 				if(marker.label) marker.label.setAttribute('style','top: '+(y+t)+'px; left: '+(x+l)+'px;');
 				if(marker.border) marker.border.setAttribute('style','top: '+t+'px;  left: '+l+'px; width: '+w+'px; height: '+h+'px;');
+				if(marker.perimeter) marker.perimeter.setAttribute('style','top: '+(y+t-p)+'px;  left: '+(x+l-p)+'px; width: '+(w+p+p)+'px; height: '+(h+p+p)+'px;display: '+(this.showPerimeters? 'block' : 'none')+';');
 				if(marker.bounds) marker.bounds.setAttribute('style','top: '+(y+t)+'px;  left: '+(x+l)+'px; width: '+w+'px; height: '+h+'px;');
 			}
 		}
@@ -193,6 +195,8 @@
 		}
 
 		this.createDeedBounds = function(marker,deed) {
+			marker.perimeter = document.createElement('div');
+			marker.perimeter.setAttribute('class','perimeter');
 			marker.bounds = document.createElement('div');
 			marker.bounds.setAttribute('class','bounds');
 			let map = this;
@@ -430,7 +434,7 @@
 			layer.addEventListener('change',function(e) {
 				let checked = map.config.layers[key].checked;
 				map[key] = checked;
-				if(key=='showDeeds' || key=='showGuardTowers') map.updateMarkers();
+				if(key=='showDeeds' || key=='showPerimeters' || key=='showGuardTowers') map.updateMarkers();
 				else if(key=='showHighways' || key=='showBridges' || key=='showTunnels') map.draw();
 			});
 		}
@@ -486,8 +490,10 @@
 			for(let i=0; i<this.deeds.length; ++i) {
 				let deed = this.deeds[i];
 				let marker = deed.marker;
-				if(this.createDeedBounds(marker,deed))
+				if(this.createDeedBounds(marker,deed)) {
+					this.config.markers.appendChild(marker.perimeter);
 					this.config.markers.appendChild(marker.bounds);
+				}
 				deed.search = deed.name.replace(/[^a-zA-Z]/g,'').toLowerCase();
 			}
 			this.updateMarkers();
@@ -533,6 +539,7 @@
 	config.toggleIso       = document.getElementById('map-isometric');
 	config.layers          = {
 		showDeeds:        document.getElementById('layer-deeds'),
+		showPerimeters:   document.getElementById('layer-perimeters'),
 		showGuardTowers:  document.getElementById('layer-guardtowers'),
 		showHighways:     document.getElementById('layer-highways'),
 		showBridges:      document.getElementById('layer-bridges'),

@@ -209,6 +209,7 @@ public final class ZoneInfo {
             final int sy = deedResultSet.getInt("STARTY");
             final int ex = deedResultSet.getInt("ENDX");
             final int ey = deedResultSet.getInt("ENDY");
+            final int p = deedResultSet.getInt("PERIMETER");
             int visibility = 0;
             int x = (sx+ex)/2;
             int y = (sy+ey)/2;
@@ -232,7 +233,7 @@ public final class ZoneInfo {
             if(pd!=null) {
                 visibility = pd.getJson().optInt("deedVisibility",0);
             }
-            deeds.add(new Deed(name,founder,mayor,creationDate,democracy,kingdom,x,y,permanent,pvp,sx,sy,ex,ey,visibility));
+            deeds.add(new Deed(name,founder,mayor,creationDate,democracy,kingdom,x,y,permanent,pvp,sx,sy,ex,ey,p,visibility));
         }
 
         logger.log(Level.INFO,"Loading kingdoms");

@@ -36,6 +36,7 @@ public final class Config {
     private boolean showDeedBordersFlat;
     private boolean usePlayerSettings;
     private int[] guardTowerIDs;
+    private String neutralLandName;
 
     private Config() {
 
@@ -82,6 +83,8 @@ public final class Config {
             String gtids = getProperty(properties,"guard-tower-ids",suffix,null);
             guardTowerIDs = parseIntArray(gtids);
             logger.info("Guard tower IDs: "+gtids);
+            neutralLandName = getProperty(properties,"neutral-land-name",suffix,serverName);
+            logger.info("Neutral Land Name: "+neutralLandName);
         }
     }
 
@@ -159,5 +162,9 @@ public final class Config {
 
     public int[] getGuardTowerIDs() {
         return this.guardTowerIDs;
+    }
+
+    public String getNeutralLandName() {
+        return this.neutralLandName;
     }
 }

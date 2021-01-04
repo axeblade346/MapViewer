@@ -127,6 +127,7 @@ public final class MapViewer {
           .append("    <div class=\"panel\">\n")
           .append("      <h3>Layers</h3>\n")
           .append("      <label><input type=\"checkbox\" id=\"layer-deeds\" />Deeds</label>\n")
+          .append("      <label><input type=\"checkbox\" id=\"layer-perimeters\" />Perimeters</label>\n")
           .append("      <label><input type=\"checkbox\" id=\"layer-guardtowers\" />Guard towers</label>\n")
           .append("      <label><input type=\"checkbox\" id=\"layer-highways\" />Highways</label>\n")
           .append("      <label><input type=\"checkbox\" id=\"layer-bridges\" />Bridges</label>\n")
@@ -179,60 +180,65 @@ public final class MapViewer {
         if(Files.notExists(path,new LinkOption[0])) {
             Files.createDirectory(path,new FileAttribute[0]);
         }
+        String serverName = config.getServerName().replace("\"","&quot;");
+        String neutralLandName = config.getNeutralLandName().replace("\"","&quot;");
         StringBuilder sb = new StringBuilder();
-        sb.append("\nfunction Config() {}\n");
-        sb.append("var config = new Config();\n");
-        sb.append("config.size = ").append(size).append(";\n");
-        sb.append("config.x = ").append(x).append(";\n");
-        sb.append("config.y = ").append(y).append(";\n");
-        sb.append("config.mode = \"terrain\";\n");
-        sb.append("config.showDeedBordersIn3dMode = ").append(config.showDeedBorders3d()).append(";\n");
-        sb.append("config.showDeedBordersInFlatMode = ").append(config.showDeedBordersFlat()).append(";\n\n");
-        sb.append("function Deed(name,founder,mayor,creationDate,democracy,kingdom,x,y,height,permanent,sx,sy,ex,ey) {\n");
-        sb.append("   this.name          = name;\n");
-        sb.append("   this.founder       = founder;\n");
-        sb.append("   this.mayor         = mayor;\n");
-        sb.append("   this.creationDate  = creationDate;\n");
-        sb.append("   this.democracy     = democracy;\n");
-        sb.append("   this.kingdom       = kingdom;\n");
-        sb.append("   this.x             = x;\n");
-        sb.append("   this.y             = y;\n");
-        sb.append("   this.sx            = sx;\n");
-        sb.append("   this.sy            = sy;\n");
-        sb.append("   this.ex            = ex;\n");
-        sb.append("   this.ey            = ey;\n");
-        sb.append("   this.height        = height;\n");
-        sb.append("   this.permanent     = permanent;\n");
-        sb.append("}\n\n");
-        sb.append("function FocusZone(name,x,y,height,type,sx,sy,ex,ey) {\n");
-        sb.append("   this.name    = name;\n");
-        sb.append("   this.x       = x;\n");
-        sb.append("   this.y       = y;\n");
-        sb.append("   this.sx      = sx;\n");
-        sb.append("   this.sy      = sy;\n");
-        sb.append("   this.ex      = ex;\n");
-        sb.append("   this.ey      = ey;\n");
-        sb.append("   this.height  = height;\n");
-        sb.append("   this.type    = type;\n");
-        sb.append("}\n\n");
-        sb.append("function Kingdom(kingdom,name,king) {\n");
-        sb.append("   this.kingdom = kingdom;\n");
-        sb.append("   this.name    = name;\n");
-        sb.append("   this.king    = king;\n");
-        sb.append("}\n\n");
-        sb.append("function GuardTower(owner,creationDate,kingdom,x,y,z,description) {\n");
-        sb.append("   this.owner         = owner;\n");
-        sb.append("   this.creationDate  = creationDate;\n");
-        sb.append("   this.kingdom       = kingdom;\n");
-        sb.append("   this.x             = x;\n");
-        sb.append("   this.y             = y;\n");
-        sb.append("   this.z             = z;\n");
-        sb.append("   this.description   = description;\n");
-        sb.append("}\n\n");
-        sb.append("var deeds = [];\n");
-        sb.append("var focusZones = [];\n");
-        sb.append("var kingdoms = [];\n");
-        sb.append("var guardTowers = [];\n");
+        sb.append("\nvar config = {\n")
+          .append("   serverName: \"").append(serverName).append("\",\n")
+          .append("   size: ").append(size).append(",\n")
+          .append("   x: ").append(x).append(",\n")
+          .append("   y: ").append(y).append(",\n")
+          .append("   mode: \"terrain\",\n")
+          .append("   showDeedBordersIn3dMode: ").append(config.showDeedBorders3d()).append(",\n")
+          .append("   showDeedBordersInFlatMode: ").append(config.showDeedBordersFlat()).append(",\n")
+          .append("   neutralLandName: \"").append(neutralLandName).append("\"\n")
+          .append("};\n")
+          .append("function Deed(name,founder,mayor,creationDate,democracy,kingdom,x,y,height,permanent,sx,sy,ex,ey,p) {\n")
+          .append("   this.name          = name;\n")
+          .append("   this.founder       = founder;\n")
+          .append("   this.mayor         = mayor;\n")
+          .append("   this.creationDate  = creationDate;\n")
+          .append("   this.democracy     = democracy;\n")
+          .append("   this.kingdom       = kingdom;\n")
+          .append("   this.x             = x;\n")
+          .append("   this.y             = y;\n")
+          .append("   this.sx            = sx;\n")
+          .append("   this.sy            = sy;\n")
+          .append("   this.ex            = ex;\n")
+          .append("   this.ey            = ey;\n")
+          .append("   this.p             = p;\n")
+          .append("   this.height        = height;\n")
+          .append("   this.permanent     = permanent;\n")
+          .append("}\n\n")
+          .append("function FocusZone(name,x,y,height,type,sx,sy,ex,ey) {\n")
+          .append("   this.name    = name;\n")
+          .append("   this.x       = x;\n")
+          .append("   this.y       = y;\n")
+          .append("   this.sx      = sx;\n")
+          .append("   this.sy      = sy;\n")
+          .append("   this.ex      = ex;\n")
+          .append("   this.ey      = ey;\n")
+          .append("   this.height  = height;\n")
+          .append("   this.type    = type;\n")
+          .append("}\n\n")
+          .append("function Kingdom(kingdom,name,king) {\n")
+          .append("   this.kingdom = kingdom;\n")
+          .append("   this.name    = name;\n")
+          .append("   this.king    = king;\n")
+          .append("}\n\n")
+          .append("function GuardTower(owner,creationDate,kingdom,x,y,z,description) {\n")
+          .append("   this.owner         = owner;\n")
+          .append("   this.creationDate  = creationDate;\n")
+          .append("   this.kingdom       = kingdom;\n")
+          .append("   this.x             = x;\n")
+          .append("   this.y             = y;\n")
+          .append("   this.z             = z;\n")
+          .append("   this.description   = description;\n")
+          .append("}\n\n")
+          .append("var deeds = [];\n")
+          .append("var focusZones = [];\n")
+          .append("var kingdoms = [];\n")
+          .append("var guardTowers = [];\n");
         if(config.showDeeds()) {
             for(final Deed deed : deeds) {
                 if(deed.getVisibility() >= 2) continue;
@@ -257,7 +263,8 @@ public final class MapViewer {
                   .append(deed.getSx()).append(",")
                   .append(deed.getSy()).append(",")
                   .append(deed.getEx()).append(",")
-                  .append(deed.getEy()).append("));\n");
+                  .append(deed.getEy()).append(",")
+                  .append(deed.getPerimeter()).append("));\n");
             }
         }
         for(final FocusZone focusZone : focusZones) {
@@ -291,14 +298,14 @@ public final class MapViewer {
         }
         sb.append("highwayNodes = [");
         writeHighwayNodes(highwayNodes,sb);
-        sb.append("\n];\n");
-        sb.append("bridgeNodes = [");
+        sb.append("\n];\n")
+          .append("bridgeNodes = [");
         writeHighwayNodes(bridgeNodes,sb);
-        sb.append("\n];\n");
-        sb.append("tunnelNodes = [");
+        sb.append("\n];\n")
+          .append("tunnelNodes = [");
         writeHighwayNodes(tunnelNodes,sb);
-        sb.append("\n];\n");
-        sb.append("var timestamp = ").append(System.currentTimeMillis()).append(";\n");
+        sb.append("\n];\n")
+          .append("var timestamp = ").append(System.currentTimeMillis()).append(";\n");
         try(final OutputStream out = Files.newOutputStream(path.resolve("config.js"),new OpenOption[0])) {
             out.write(sb.toString().getBytes(StandardCharsets.UTF_8));
         }
