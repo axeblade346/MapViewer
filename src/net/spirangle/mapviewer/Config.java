@@ -32,11 +32,16 @@ public final class Config {
     private Path outputDirectory;
     private OutputFormat outputFormat;
     private boolean showDeeds;
+    private boolean showGuardTowers;
+    private boolean showKingdoms;
+    private boolean showHighways;
+    private boolean showSigns;
     private boolean showDeedBorders3d;
     private boolean showDeedBordersFlat;
     private boolean usePlayerSettings;
     private int[] guardTowerIDs;
     private String neutralLandName;
+    private String[] kingdomColors;
 
     private Config() {
 
@@ -74,6 +79,14 @@ public final class Config {
             logger.info("Output Format: "+outputFormat);
             showDeeds = Boolean.parseBoolean(getProperty(properties,"show-deeds",suffix,"true"));
             logger.info("Show deeds: "+showDeeds);
+            showGuardTowers = Boolean.parseBoolean(getProperty(properties,"show-guard-towers",suffix,"true"));
+            logger.info("Show guard towers: "+showGuardTowers);
+            showKingdoms = Boolean.parseBoolean(getProperty(properties,"show-kingdoms",suffix,"true"));
+            logger.info("Show kingdoms: "+showKingdoms);
+            showHighways = Boolean.parseBoolean(getProperty(properties,"show-highways",suffix,"true"));
+            logger.info("Show highways: "+showHighways);
+            showSigns = Boolean.parseBoolean(getProperty(properties,"show-signs",suffix,"true"));
+            logger.info("Show signs: "+showSigns);
             showDeedBorders3d = Boolean.parseBoolean(getProperty(properties,"show-deed-borders-in-3d-mode",suffix,"false"));
             logger.info("Show deed borders (3D): "+showDeedBorders3d);
             showDeedBordersFlat = Boolean.parseBoolean(getProperty(properties,"show-deed-borders-in-flat-mode",suffix,"true"));
@@ -85,6 +98,9 @@ public final class Config {
             logger.info("Guard tower IDs: "+gtids);
             neutralLandName = getProperty(properties,"neutral-land-name",suffix,serverName);
             logger.info("Neutral Land Name: "+neutralLandName);
+            String kcols = getProperty(properties,"kingdom-colors",suffix,null);
+            kingdomColors = parseArray(kcols);
+            logger.info("Kingdom colors: "+kcols);
         }
     }
 
@@ -95,6 +111,14 @@ public final class Config {
         if(value==null || value.isEmpty())
             value = defaultValue;
         return value;
+    }
+
+    private String[] parseArray(String value) {
+        if(value==null) return null;
+        String[] strArray = value.split(",");
+        for(int i=0; i<strArray.length; ++i)
+            strArray[i] = strArray[i].trim();
+        return strArray;
     }
 
     private int[] parseIntArray(String value) {
@@ -148,6 +172,22 @@ public final class Config {
         return this.showDeeds;
     }
 
+    public boolean showGuardTowers() {
+        return this.showGuardTowers;
+    }
+
+    public boolean showKingdoms() {
+        return this.showKingdoms;
+    }
+
+    public boolean showHighways() {
+        return this.showHighways;
+    }
+
+    public boolean showSigns() {
+        return this.showSigns;
+    }
+
     public boolean showDeedBorders3d() {
         return this.showDeedBorders3d;
     }
@@ -166,5 +206,9 @@ public final class Config {
 
     public String getNeutralLandName() {
         return this.neutralLandName;
+    }
+
+    public String getKingdomColor(int kingdom) {
+        return kingdomColors!=null && kingdom>=0 && kingdom<kingdomColors.length? kingdomColors[kingdom] : null;
     }
 }

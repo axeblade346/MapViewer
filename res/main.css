@@ -134,9 +134,17 @@ a, a:hover, a:focus {
 	background: url('tower.png') top left no-repeat;
 }
 
-.zoom0 .tower,
-.zoom1 .tower,
-.zoom2 .tower { display: none !important; }
+.sign {
+	display: none;
+	position: absolute;
+	width: 24px;
+	height: 24px;
+	background: url('sign.png') top left no-repeat;
+}
+
+.zoom0 .tower, .zoom1 .tower, .zoom2 .tower, .zoom3 .tower,
+.zoom0 .sign,  .zoom1 .sign,  .zoom2 .sign,  .zoom3 .sign,
+.zoom4 .sign,  .zoom5 .sign,  .zoom6 .sign,  .zoom7 .sign { display: none !important; }
 
 .pointer {
 	display: none;
@@ -144,6 +152,22 @@ a, a:hover, a:focus {
 	width: 24px;
 	height: 24px;
 	background: url('pointer.png') top left no-repeat;
+}
+
+.notification {
+	position: fixed;
+	width: 400px;
+	bottom: 5px;
+	left: 50%;
+	margin-left: -200px;
+	padding: 20px;
+	background-color: #ffffff;
+	border: 1px solid #000000;
+	border-radius: 5px;
+	color: #000000;
+	font-size: 120%;
+	font-weight: bold;
+	text-align: center;
 }
 
 /*
@@ -351,6 +375,30 @@ a, a:hover, a:focus {
 	background-color: #D5E9FF;
 	margin: 0 0 2px 0;
 	padding: 2px 0;
+}
+
+#info dl {
+	margin: 0;
+}
+
+#info dt {
+	margin: 0;
+}
+
+#info dd {
+	margin: 0 0 0 1em;
+	font-size: 10px;
+}
+
+#info dd.sign-info {
+	margin: 2px;
+	padding: 3px;
+	background: #eeeeee;
+	border: 1px solid #999999;
+	border-radius: 2px;
+	font-size: 10px;
+	font-style: italic;
+	text-align: center;
 }
 
 #timestamp {
