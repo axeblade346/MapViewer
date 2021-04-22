@@ -23,6 +23,7 @@ public final class MapViewer {
         "map.js",
         "pointer.png",
         "search.png",
+        "sign.png",
         "tower.png"
     };
 
@@ -101,47 +102,62 @@ public final class MapViewer {
         else sb.append(size);
         sb.append("\"></canvas>\n");
         sb.append("  <div id=\"markers\"></div>\n")
-          .append("  <div id=\"sidebar\">\n")
-          .append("    <h2><a href=\"").append(config.getWebPageURL()).append("\">");
+          .append("  <aside id=\"sidebar\">\n")
+          .append("    <header>\n")
+          .append("      <h2><a href=\"").append(config.getWebPageURL()).append("\">");
         if(php) sb.append("<?= $serverName ?>");
         else sb.append(serverName);
         sb.append("</a></h2>\n")
-          .append("    <div id=\"zoom\" class=\"panel\">\n")
+          .append("    </header>\n")
+          .append("    <section id=\"zoom\" class=\"panel\">\n")
           .append("      <h3>Zoom</h3>\n")
           .append("      <div id=\"zoom-in\">+</div>\n")
           .append("      <div id=\"zoom-out\">-</div>\n")
-          .append("      <p id=\"zoom-scale\"></p>\n")
-          .append("    </div>\n")
-          .append("    <div id=\"map-type\" class=\"panel\">\n")
+          .append("      <div id=\"zoom-scale\"></div>\n")
+          .append("    </section>\n")
+          .append("    <section id=\"map-type\" class=\"panel\">\n")
           .append("      <h3>Map Type</h3>\n")
           .append("      <div id=\"map-terrain\" class=\"selected\">Terrain</div>\n")
           .append("      <div id=\"map-topographic\">Topographic</div>\n")
           .append("      <div id=\"map-isometric\">Isometric</div>\n")
-          .append("    </div>\n")
-          .append("    <div id=\"coords\" class=\"panel\">\n")
+          .append("    </section>\n")
+          .append("    <section id=\"coords\" class=\"panel\">\n")
           .append("      <h3>Coordinates</h3>\n")
-          .append("      <p id=\"coords-pointer\" style=\"display:none\"></p>\n")
-          .append("      <p id=\"coords-mouse\">0, 0</p>\n")
-          .append("      <p id=\"coords-distance\" style=\"display:none\"></p>\n")
-          .append("    </div>\n")
-          .append("    <div class=\"panel\">\n")
-          .append("      <h3>Layers</h3>\n")
-          .append("      <label><input type=\"checkbox\" id=\"layer-deeds\" />Deeds</label>\n")
-          .append("      <label><input type=\"checkbox\" id=\"layer-perimeters\" />Perimeters</label>\n")
-          .append("      <label><input type=\"checkbox\" id=\"layer-guardtowers\" />Guard towers</label>\n")
-          .append("      <label><input type=\"checkbox\" id=\"layer-highways\" />Highways</label>\n")
-          .append("      <label><input type=\"checkbox\" id=\"layer-bridges\" />Bridges</label>\n")
-          .append("      <label><input type=\"checkbox\" id=\"layer-tunnels\" />Tunnels</label>\n")
-          .append("    </div>\n")
-          .append("    <div class=\"panel\">\n")
+          .append("      <div id=\"coords-pointer\" style=\"display:none\"></div>\n")
+          .append("      <div id=\"coords-mouse\">0, 0</div>\n")
+          .append("      <div id=\"coords-distance\" style=\"display:none\"></div>\n")
+          .append("    </section>\n");
+        if(config.showDeeds() || config.showGuardTowers() || config.showKingdoms() ||
+           config.showHighways() || config.showSigns()) {
+            sb.append("    <section class=\"panel\">\n")
+              .append("      <h3>Layers</h3>\n");
+            if(config.showDeeds()) {
+                sb.append("      <label><input type=\"checkbox\" id=\"layer-deeds\" />Deeds</label>\n")
+                  .append("      <label><input type=\"checkbox\" id=\"layer-perimeters\" />Perimeters</label>\n");
+            }
+            if(config.showGuardTowers()) {
+                sb.append("      <label><input type=\"checkbox\" id=\"layer-guardtowers\" />Guard towers</label>\n");
+            }
+            if(config.showKingdoms()) {
+                sb.append("      <label><input type=\"checkbox\" id=\"layer-kingdoms\" />Kingdoms</label>\n");
+            }
+            if(config.showHighways()) {
+                sb.append("      <label><input type=\"checkbox\" id=\"layer-highways\" />Highways</label>\n");
+            }
+            if(config.showSigns()) {
+                sb.append("      <label><input type=\"checkbox\" id=\"layer-signs\" />Signs</label>\n");
+            }
+            sb.append("    </section>\n");
+        }
+        sb.append("    <section class=\"panel\">\n")
           .append("      <h3>Info</h3>\n")
-          .append("      <p id=\"info\"></p>\n")
-          .append("    </div>\n")
+          .append("      <div id=\"info\"></div>\n")
+          .append("    </section>\n")
           .append("    <footer>\n")
           .append("      <div id=\"timestamp\"></div>\n")
           .append("      <a id=\"map-file\" href=\"#\" target=\"_blank\">Map file</a>\n")
           .append("    </footer>\n")
-          .append("  </div>\n")
+          .append("  </aside>\n")
           .append("  <div id=\"search\">\n")
           .append("    <input type=\"text\" id=\"searchbox\" placeholder=\"Search deeds and locations...\" />\n")
           .append("    <div id=\"searchbutton\"></div>\n")
@@ -160,17 +176,18 @@ public final class MapViewer {
 
     private static void saveConfig(final Config config,final ZoneInfo zoneInfo,final int size) throws IOException {
         logger.info("Saving config file");
-        final Path path = config.getOutputDirectory();
-        final List<Deed> deeds = zoneInfo.getDeeds();
-        final List<FocusZone> focusZones = zoneInfo.getFocusZones();
-        final List<Kingdom> kingdoms = zoneInfo.getKingdoms();
-        final List<GuardTower> guardTowers = zoneInfo.getGuardTowers();
-        final List<HighwayNode> highwayNodes = zoneInfo.getHighwayNodes();
-        final List<HighwayNode> bridgeNodes = zoneInfo.getBridgeNodes();
-        final List<HighwayNode> tunnelNodes = zoneInfo.getTunnelNodes();
+        Path path = config.getOutputDirectory();
+        List<Deed> deeds = zoneInfo.getDeeds();
+        List<FocusZone> focusZones = zoneInfo.getFocusZones();
+        List<Kingdom> kingdoms = zoneInfo.getKingdoms();
+        List<GuardTower> guardTowers = zoneInfo.getGuardTowers();
+        List<Sign> signs = zoneInfo.getSigns();
+        List<HighwayNode> highwayNodes = zoneInfo.getHighwayNodes();
+        List<HighwayNode> bridgeNodes = zoneInfo.getBridgeNodes();
+        List<HighwayNode> tunnelNodes = zoneInfo.getTunnelNodes();
         int y;
         int x = y = size/2;
-        for(final Deed deed : deeds) {
+        for(Deed deed : deeds) {
             if(deed.isPermanent()) {
                 x = deed.getX();
                 y = deed.getY();
@@ -221,10 +238,11 @@ public final class MapViewer {
           .append("   this.height  = height;\n")
           .append("   this.type    = type;\n")
           .append("}\n\n")
-          .append("function Kingdom(kingdom,name,king) {\n")
+          .append("function Kingdom(kingdom,name,king,color) {\n")
           .append("   this.kingdom = kingdom;\n")
           .append("   this.name    = name;\n")
           .append("   this.king    = king;\n")
+          .append("   this.color   = color;\n")
           .append("}\n\n")
           .append("function GuardTower(owner,creationDate,kingdom,x,y,z,description) {\n")
           .append("   this.owner         = owner;\n")
@@ -235,12 +253,21 @@ public final class MapViewer {
           .append("   this.z             = z;\n")
           .append("   this.description   = description;\n")
           .append("}\n\n")
+          .append("function Sign(owner,creationDate,x,y,z,message) {\n")
+          .append("   this.owner         = owner;\n")
+          .append("   this.creationDate  = creationDate;\n")
+          .append("   this.x             = x;\n")
+          .append("   this.y             = y;\n")
+          .append("   this.z             = z;\n")
+          .append("   this.message       = message;\n")
+          .append("}\n\n")
           .append("var deeds = [];\n")
           .append("var focusZones = [];\n")
           .append("var kingdoms = [];\n")
-          .append("var guardTowers = [];\n");
+          .append("var guardTowers = [];\n")
+          .append("var signs = [];\n");
         if(config.showDeeds()) {
-            for(final Deed deed : deeds) {
+            for(Deed deed : deeds) {
                 if(deed.getVisibility() >= 2) continue;
                 String name, founder, mayor;
                 name = founder = mayor = "<hidden>";
@@ -267,7 +294,7 @@ public final class MapViewer {
                   .append(deed.getPerimeter()).append("));\n");
             }
         }
-        for(final FocusZone focusZone : focusZones) {
+        for(FocusZone focusZone : focusZones) {
             sb.append("focusZones.push(new FocusZone('")
               .append(focusZone.getName().replace("'","\\'")).append("',")
               .append(focusZone.getX()).append(",")
@@ -279,31 +306,52 @@ public final class MapViewer {
               .append(focusZone.getEx()).append(",")
               .append(focusZone.getEy()).append("));\n");
         }
-        for(final Kingdom kingdom : kingdoms) {
+        for(Kingdom kingdom : kingdoms) {
             String king = kingdom.getKing()!=null? kingdom.getKing().replace("'","\\'") : "";
+            String color = config.getKingdomColor(kingdom.getKingdom());
             sb.append("kingdoms[").append(kingdom.getKingdom()).append("] = new Kingdom(")
               .append(kingdom.getKingdom()).append(",'")
               .append(kingdom.getName().replace("'","\\'")).append("','")
-              .append(king).append("');\n");
+              .append(king).append("','")
+              .append(color==null? "" : color).append("');\n");
         }
-        for(final GuardTower guardTower : guardTowers) {
-            sb.append("guardTowers.push(new GuardTower('")
-              .append(guardTower.getOwner().replace("'","\\'")).append("',")
-              .append(guardTower.getCreationDate()).append(",")
-              .append(guardTower.getKingdom()).append(",")
-              .append(guardTower.getX()).append(",")
-              .append(guardTower.getY()).append(",")
-              .append(guardTower.getZ()).append(",'")
-              .append(guardTower.getDescription().replace("'","\\'")).append("'));\n");
+        if(config.showGuardTowers() || config.showKingdoms()) {
+            for(GuardTower guardTower : guardTowers) {
+                sb.append("guardTowers.push(new GuardTower('")
+                  .append(guardTower.getOwner().replace("'","\\'")).append("',")
+                  .append(guardTower.getCreationDate()).append(",")
+                  .append(guardTower.getKingdom()).append(",")
+                  .append(guardTower.getX()).append(",")
+                  .append(guardTower.getY()).append(",")
+                  .append(guardTower.getZ()).append(",'")
+                  .append(guardTower.getDescription().replace("'","\\'")).append("'));\n");
+            }
+        }
+        if(config.showSigns()) {
+            for(Sign sign : signs) {
+                sb.append("signs.push(new Sign('")
+                  .append(sign.getOwner().replace("'","\\'")).append("',")
+                  .append(sign.getCreationDate()).append(",")
+                  .append(sign.getX()).append(",")
+                  .append(sign.getY()).append(",")
+                  .append(sign.getZ()).append(",'")
+                  .append(sign.getMessage().replace("'","\\'")).append("'));\n");
+            }
         }
         sb.append("highwayNodes = [");
-        writeHighwayNodes(highwayNodes,sb);
+        if(config.showHighways()) {
+            writeHighwayNodes(highwayNodes,sb);
+        }
         sb.append("\n];\n")
           .append("bridgeNodes = [");
-        writeHighwayNodes(bridgeNodes,sb);
+        if(config.showHighways()) {
+            writeHighwayNodes(bridgeNodes,sb);
+        }
         sb.append("\n];\n")
           .append("tunnelNodes = [");
-        writeHighwayNodes(tunnelNodes,sb);
+        if(config.showHighways()) {
+            writeHighwayNodes(tunnelNodes,sb);
+        }
         sb.append("\n];\n")
           .append("var timestamp = ").append(System.currentTimeMillis()).append(";\n");
         try(final OutputStream out = Files.newOutputStream(path.resolve("config.js"),new OpenOption[0])) {
