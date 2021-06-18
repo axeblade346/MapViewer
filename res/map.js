@@ -320,8 +320,8 @@
             canvas.width = this.mapImage.img.width;
             canvas.height = this.mapImage.img.height;
             let ctx = this.config.ctx;
-            let w = 101;
-            let h = 101;
+            let w = 121;
+            let h = 121;
             for(let k=1; k<=20; ++k) {
                 let kingdom = this.kingdoms[k];
                 if(kingdom===undefined) break;
@@ -330,8 +330,8 @@
                 for(let i=0; i<this.guardTowers.length; ++i) {
                     let guardTower = this.guardTowers[i];
                     if(guardTower.kingdom!==k) continue;
-                    let x = guardTower.x-50;
-                    let y = guardTower.y-50;
+                    let x = guardTower.x-60;
+                    let y = guardTower.y-60;
                     if(this.mode==='isometric') y -= guardTower.z*(1.0/40);
                     temp.rect(x,y,w,h);
                 }
