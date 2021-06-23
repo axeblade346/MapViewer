@@ -90,10 +90,11 @@ public final class MapViewer {
         else sb.append(serverName);
         sb.append(" - Map</title>\n")
           .append("<meta charset=\"UTF-8\">\n")
+          .append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=no\">\n")
           .append("<link rel=\"stylesheet\" type=\"text/css\" href=\"main.css\"/>\n")
           .append("</head>\n")
           .append("<body>\n")
-          .append("<main id=\"container\">\n")
+          .append("<main id=\"container\" class=\"no-ui\">\n")
           .append("  <canvas id=\"map\" width=\"");
         if(php) sb.append("<?= $mapSize ?>");
         else sb.append(size);
@@ -123,9 +124,9 @@ public final class MapViewer {
           .append("    </section>\n")
           .append("    <section id=\"coords\" class=\"panel\">\n")
           .append("      <h3>Coordinates</h3>\n")
-          .append("      <div id=\"coords-pointer\" style=\"display:none\"></div>\n")
+          .append("      <div id=\"coords-pointer\"></div>\n")
           .append("      <div id=\"coords-mouse\">0, 0</div>\n")
-          .append("      <div id=\"coords-distance\" style=\"display:none\"></div>\n")
+          .append("      <div id=\"coords-distance\"></div>\n")
           .append("    </section>\n");
         if(config.showDeeds() || config.showGuardTowers() || config.showKingdoms() ||
            config.showHighways() || config.showSigns()) {
@@ -158,6 +159,7 @@ public final class MapViewer {
           .append("      <a id=\"map-file\" href=\"#\" target=\"_blank\">Map file</a>\n")
           .append("    </footer>\n")
           .append("  </aside>\n")
+          .append("  <button id=\"sidebar-toggle\">&equiv;</button>\n")
           .append("  <div id=\"search\">\n")
           .append("    <input type=\"text\" id=\"searchbox\" placeholder=\"Search deeds and locations...\" />\n")
           .append("    <div id=\"searchbutton\"></div>\n")
