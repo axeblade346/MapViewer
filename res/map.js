@@ -144,12 +144,6 @@
         }
     }
 
-    function isTouchEnabled() {
-        return ('ontouchstart' in window) ||
-               (navigator.maxTouchPoints>0) ||
-               (navigator.msMaxTouchPoints>0);
-    }
-
     function stopEvent(e) {
         if(e.preventDefault!==undefined) e.preventDefault();
         else if(e.stopPropagation!==undefined) e.stopPropagation();
@@ -473,7 +467,7 @@
             map.config.info.innerHTML = infoText;
         }
 
-        this.mouseDown = function(mx,my,button) {
+        this.mouseDown = function(mx,my,button,touch) {
             if(button===0) {
                 this.config.list.style.display = 'none';
                 this.mx = mx;
@@ -505,14 +499,14 @@
             return true;
         }
 
-        this.mouseUp = function(button) {
+        this.mouseUp = function(button,touch) {
             if(button===0) {
                 if(this.md===false) return false;
                 this.md = false;
                 if(this.mm!==false) return true;
                 let px = this.mouseToTileX(this.mx);
                 let py = this.mouseToTileY(this.my);
-                if(px===this.pointer.x && py===this.pointer.y) {
+                if((px===this.pointer.x && py===this.pointer.y) || (touch && this.pointer.x!==-1 && this.pointer.y!==-1)) {
                     px = -1;
                     py = -1;
                 }
@@ -836,19 +830,14 @@
     config.list            = document.getElementById('autocomplete');
     config.mapFile         = document.getElementById('map-file');
     config.timestamp       = document.getElementById('timestamp');
-    config.touchDevice     = false;
 
     var map = new Map(config,kingdoms,deeds,focusZones,guardTowers,signs);
 
-    if(isTouchEnabled()) {
+    if(window.matchMedia("(any-hover: none)").matches) {
         addClass(config.container,'touch-display');
-        config.touchDevice = true;
-        let mouseMoveHandler = function(e) {
-            removeClass(config.container,'touch-display');
-            config.container.removeEventListener('mousemove',mouseMoveHandler);
-        }
-        config.container.addEventListener('mousemove',mouseMoveHandler);
+        addClass(config.container,'no-sidebar');
     }
+    removeClass(config.container,'no-ui');
 
     config.container.addEventListener('wheel',function(e) {
         if(e.deltaY>0) map.zoomOut(e.pageX,e.pageY);
@@ -857,7 +846,7 @@
     });
 
     function mouseDown(e) {
-        map.mouseDown(e.pageX,e.pageY,e.button);
+        map.mouseDown(e.pageX,e.pageY,e.button,false);
         stopEvent(e);
     }
     config.canvas.addEventListener('mousedown',mouseDown);
@@ -866,7 +855,7 @@
         if(map.mouseMove(e.pageX,e.pageY)) stopEvent(e);
     });
     config.container.addEventListener('mouseup',function(e) {
-        if(map.mouseUp(e.button)) stopEvent(e);
+        if(map.mouseUp(e.button,false)) stopEvent(e);
     });
     config.canvas.addEventListener('contextmenu',function(e) { stopEvent(e); });
     config.markers.addEventListener('contextmenu',function(e) { stopEvent(e); });
@@ -874,7 +863,7 @@
     function touchStart(e) {
         let touch = e.changedTouches[0];
         map.touchDown(touch.clientX,touch.clientY);
-        map.mouseDown(touch.clientX,touch.clientY,0);
+        map.mouseDown(touch.clientX,touch.clientY,0,true);
     }
     config.canvas.addEventListener('touchstart',touchStart);
     config.markers.addEventListener('touchstart',touchStart);
@@ -883,7 +872,7 @@
         if(map.mouseMove(touch.clientX,touch.clientY)) stopEvent(e);
     });
     config.container.addEventListener('touchend',function(e) {
-        if(map.mouseUp(0)) stopEvent(e);
+        if(map.mouseUp(0,true)) stopEvent(e);
     });
 
     config.toggleTerrain.addEventListener('click',function(e) {

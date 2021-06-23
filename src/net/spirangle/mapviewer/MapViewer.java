@@ -90,10 +90,11 @@ public final class MapViewer {
         else sb.append(serverName);
         sb.append(" - Map</title>\n")
           .append("<meta charset=\"UTF-8\">\n")
+          .append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=no\">\n")
           .append("<link rel=\"stylesheet\" type=\"text/css\" href=\"main.css\"/>\n")
           .append("</head>\n")
           .append("<body>\n")
-          .append("<main id=\"container\">\n")
+          .append("<main id=\"container\" class=\"no-ui\">\n")
           .append("  <canvas id=\"map\" width=\"");
         if(php) sb.append("<?= $mapSize ?>");
         else sb.append(size);
