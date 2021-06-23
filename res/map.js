@@ -22,6 +22,72 @@
         return info;
     }
 
+    function getFocusZoneInfo(map,focusZone) {
+        if(focusZone.infoText===undefined) {
+            let deeds = 0;
+            for(let i=0; i<map.deeds.length; ++i) {
+                let d = map.deeds[i];
+                if(d.sx<=focusZone.ex && d.ex>=focusZone.sx &&
+                   d.sy<=focusZone.ey && d.ey>=focusZone.sy) ++deeds;
+            }
+            let guardTowers = 0;
+            for(let i=0; i<map.guardTowers.length; ++i) {
+                let gt = map.guardTowers[i];
+                if(gt.x<=focusZone.ex && gt.x>=focusZone.sx &&
+                   gt.y<=focusZone.ey && gt.y>=focusZone.sy) ++guardTowers;
+            }
+            focusZone.infoText = '<h4>'+focusZone.name+'</h4>'+
+                                 '<dl>'+
+                                 '<dt>Type: '+map.focusZoneTypes[focusZone.type]+'</dt>'+
+                                 '<dt>Deeds: '+deeds+'</dt>'+
+                                 '<dt>Guard towers: '+guardTowers+'</dt>'+
+                                 '</dl>';
+        }
+        return focusZone.infoText;
+    }
+
+    function getDeedInfo(map,deed) {
+        if(deed.infoText===undefined) {
+            let type = deed.permanent? 'permanent deed' : 'deed';
+            let kingdom = kingdoms[deed.kingdom];
+            deed.infoText = '<h4>'+deed.name+'</h4>'+
+                            '<dl>'+
+                            '<dt>Type: '+type+'</dt>'+
+                            '<dt>Mayor: <i>'+deed.mayor+'</i></dt>'+
+                            '<dt>Kingdom: <i>'+kingdom.name+'</i></dt>'+
+                            '<dt>Founded: '+getDate(deed.creationDate)+'</dt>'+
+                            (deed.mayor!==deed.founder? '<dt>Founder: <i>'+deed.founder+'</i></dt>' : '')+
+                            '<dt>Token: '+deed.x+', '+deed.y+'</dt>'+
+                            '<dt>Size: '+(deed.ex-deed.sx+1)+' x '+(deed.ey-deed.sy+1)+' tiles</dt>'+
+                            '</dl>';
+        }
+        return deed.infoText;
+    }
+
+    function getGuardTowerInfo(map,guardTower) {
+        if(guardTower.infoText===undefined) {
+            guardTower.infoText = '<h4>Guard Tower</h4>'+
+                                  '<dl>'+
+                                  '<dt>Creator: '+guardTower.owner+'</dt>'+
+                                  (guardTower.description? '<dt>Description: <i>'+guardTower.description+'</i></dt>' : '')+
+                                  '<dt>Location: '+guardTower.x+', '+guardTower.y+'</dt>'+
+                                  '</dl>';
+        }
+        return guardTower.infoText;
+    }
+
+    function getSignInfo(map,sign) {
+        if(sign.infoText===undefined) {
+            sign.infoText = '<h4>Sign</h4>'+
+                            '<dl>'+
+                            '<dt>Creator: '+sign.owner+'</dt>'+
+                            '<dt>Message:</dt><dd class="sign-info">'+sign.message+'</dd>'+
+                            '<dt>Location: '+sign.x+', '+sign.y+'</dt>'+
+                            '</dl>';
+        }
+        return sign.infoText;
+    }
+
     function getWidth() {
         return global.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
     }
@@ -48,6 +114,45 @@
             }
         }
         return params;
+    }
+
+    function toggleClass(element,cl) {
+        if(element.classList) element.classList.toggle(cl);
+        else {
+            var classes = element.className.split(" ");
+            var i = classes.indexOf(cl);
+            if(i===-1) element.className = classes.push(cl).join(" ");
+            else element.className = classes.splice(i, 1).join(" ");
+        }
+    }
+
+    function addClass(element,cl) {
+        if(element.classList) element.classList.add(cl);
+        else {
+            var classes = element.className.split(" ");
+            var i = classes.indexOf(cl);
+            if(i===-1) element.className = classes.push(cl).join(" ");
+        }
+    }
+
+    function removeClass(element,cl) {
+        if(element.classList) element.classList.remove(cl);
+        else {
+            var classes = element.className.split(" ");
+            var i = classes.indexOf(cl);
+            if(i>=0) element.className = classes.splice(i, 1).join(" ");
+        }
+    }
+
+    function isTouchEnabled() {
+        return ('ontouchstart' in window) ||
+               (navigator.maxTouchPoints>0) ||
+               (navigator.msMaxTouchPoints>0);
+    }
+
+    function stopEvent(e) {
+        if(e.preventDefault!==undefined) e.preventDefault();
+        else if(e.stopPropagation!==undefined) e.stopPropagation();
     }
 
     function MapImage(url) {
@@ -95,6 +200,7 @@
         this.mapImage    = null;
         this.kingdoms    = kingdoms;
         this.deeds       = deeds;
+        this.focusDeed        = null;
         this.focusZones  = focusZones;
         this.guardTowers = guardTowers;
         this.signs       = signs;
@@ -138,10 +244,20 @@
         this.config.ctx.imageSmoothingEnabled = false;
         this.config.info.innerHTML = serverInfo;
 
-        this.updateHash = function(x,y,d) {
-            if(x!==-1 && y!==-1) global.location.hash = 'x='+this.pointer.x+'&y='+this.pointer.y;
-            else if(d) global.location.hash = 'deed='+d;
-            else global.location.hash = '';
+        this.updateHash = function() {
+            let map = this;
+            let hash = [];
+            let p = this.pointer;
+            if(p.x!==-1 && p.y!==-1) hash.push('x='+p.x+'&y='+p.y);
+            else if(this.focusDeed!==null) hash.push('deed='+this.focusDeed.search);
+            if(this.zoomIndex!==4) hash.push('z='+this.zoomIndex);
+            let i = 0,l = 0;
+            for(let key in this.config.layers) {
+                if(map[key]) l |= 1<<i;
+                ++i;
+            }
+            if(l>0) hash.push('l='+l);
+            if(hash.length>0 || global.location.hash) global.location.hash = hash.join('&');
         }
 
         this.updateMarker = function(marker) {
@@ -205,30 +321,11 @@
                 (this.mode==='isometric' && !this.config.showDeedBordersIn3dMode)) return false;
             marker.border = document.createElement('div');
             marker.border.setAttribute('class','border fzb_'+focusZone.type);
+            marker.border.focusZone = focusZone;
 //			marker.border.setAttribute('title', focusZone.name);
             let map = this;
             marker.border.addEventListener('mouseover',function(e) {
-                if(focusZone.infoText===undefined) {
-                    let deeds = 0;
-                    for(let i=0; i<map.deeds.length; ++i) {
-                        let d = map.deeds[i];
-                        if(d.sx<=focusZone.ex && d.ex>=focusZone.sx &&
-                           d.sy<=focusZone.ey && d.ey>=focusZone.sy) ++deeds;
-                    }
-                    let guardTowers = 0;
-                    for(let i=0; i<map.guardTowers.length; ++i) {
-                        let gt = map.guardTowers[i];
-                        if(gt.x<=focusZone.ex && gt.x>=focusZone.sx &&
-                           gt.y<=focusZone.ey && gt.y>=focusZone.sy) ++guardTowers;
-                    }
-                    focusZone.infoText = '<h4>'+focusZone.name+'</h4>'+
-                                         '<dl>'+
-                                         '<dt>Type: '+map.focusZoneTypes[focusZone.type]+'</dt>'+
-                                         '<dt>Deeds: '+deeds+'</dt>'+
-                                         '<dt>Guard towers: '+guardTowers+'</dt>'+
-                                         '</dl>';
-                }
-                map.config.info.innerHTML = focusZone.infoText;
+                map.config.info.innerHTML = getFocusZoneInfo(map,focusZone);
             });
             marker.border.addEventListener('mouseout',function(e) {
                 map.config.info.innerHTML = serverInfo;
@@ -240,25 +337,13 @@
         this.createDeedBounds = function(marker,deed) {
             marker.perimeter = document.createElement('div');
             marker.perimeter.setAttribute('class','perimeter');
+            marker.perimeter.deed = deed;
             marker.bounds = document.createElement('div');
             marker.bounds.setAttribute('class','bounds');
+            marker.bounds.deed = deed;
             let map = this;
-            let type = deed.permanent? 'permanent deed' : 'deed';
-            let kingdom = kingdoms[deed.kingdom];
             marker.bounds.addEventListener('mouseover',function(e) {
-                if(deed.infoText===undefined) {
-                    deed.infoText = '<h4>'+deed.name+'</h4>'+
-                                    '<dl>'+
-                                    '<dt>Type: '+type+'</dt>'+
-                                    '<dt>Mayor: <i>'+deed.mayor+'</i></dt>'+
-                                    '<dt>Kingdom: <i>'+kingdom.name+'</i></dt>'+
-                                    '<dt>Founded: '+getDate(deed.creationDate)+'</dt>'+
-                                    (deed.mayor!==deed.founder? '<dt>Founder: <i>'+deed.founder+'</i></dt>' : '')+
-                                    '<dt>Token: '+deed.x+', '+deed.y+'</dt>'+
-                                    '<dt>Size: '+(deed.ex-deed.sx+1)+' x '+(deed.ey-deed.sy+1)+' tiles</dt>'+
-                                    '</dl>';
-                }
-                map.config.info.innerHTML = deed.infoText;
+                map.config.info.innerHTML = getDeedInfo(map,deed);
             });
             marker.bounds.addEventListener('mouseout',function(e) {
                 map.config.info.innerHTML = serverInfo;
@@ -267,16 +352,10 @@
         }
 
         this.createGuardTower = function(element,guardTower) {
+            element.guardTower = guardTower;
+            let map = this;
             element.addEventListener('mouseover',function(e) {
-                if(guardTower.infoText===undefined) {
-                    guardTower.infoText = '<h4>Guard Tower</h4>'+
-                                          '<dl>'+
-                                          '<dt>Creator: '+guardTower.owner+'</dt>'+
-                                          (guardTower.description? '<dt>Description: <i>'+guardTower.description+'</i></dt>' : '')+
-                                          '<dt>Location: '+guardTower.x+', '+guardTower.y+'</dt>'+
-                                          '</dl>';
-                }
-                map.config.info.innerHTML = guardTower.infoText;
+                map.config.info.innerHTML = getGuardTowerInfo(map,guardTower);
             });
             element.addEventListener('mouseout',function(e) {
                 map.config.info.innerHTML = serverInfo;
@@ -284,16 +363,10 @@
         }
 
         this.createSign = function(element,sign) {
+            element.sign = sign;
+            let map = this;
             element.addEventListener('mouseover',function(e) {
-                if(sign.infoText===undefined) {
-                    sign.infoText = '<h4>Sign</h4>'+
-                                    '<dl>'+
-                                    '<dt>Creator: '+sign.owner+'</dt>'+
-                                    '<dt>Message:</dt><dd class="sign-info">'+sign.message+'</dd>'+
-                                    '<dt>Location: '+sign.x+', '+sign.y+'</dt>'+
-                                    '</dl>';
-                }
-                map.config.info.innerHTML = sign.infoText;
+                map.config.info.innerHTML = getSignInfo(map,sign);
             });
             element.addEventListener('mouseout',function(e) {
                 map.config.info.innerHTML = serverInfo;
@@ -301,7 +374,7 @@
         }
 
         this.draw = function() {
-            if(this.mapImage===null) return;
+            if(this.mapImage===null || this.mapImage.img===null) return;
             let ctx = this.config.ctx;
             ctx.drawImage(this.mapImage.img,0,0);
             this.config.mapFile.href = this.mapImage.url;
@@ -380,18 +453,40 @@
             this.update();
         }
 
-        this.mouseDown = function(mx,my) {
-            this.config.list.style.display = 'none';
-            this.mx = mx;
-            this.my = my;
-            this.md = true;
-            this.mm = false;
+        this.mouseToTileX = function(mx) {
+            return Math.floor((this.x+mx-(getWidth()/2))/this.zoom);
+        }
+
+        this.mouseToTileY = function(my) {
+            return Math.floor((this.y+my-(getHeight()/2))/this.zoom);
+        }
+
+        this.touchDown = function(mx,my) {
+            let element = global.document.elementFromPoint(mx,my);
+            let infoText = serverInfo;
+            if(element) {
+                if(element.focusZone) infoText = getFocusZoneInfo(map,element.focusZone);
+                else if(element.deed) infoText = getDeedInfo(map,element.deed);
+                else if(element.guardTower) infoText = getGuardTowerInfo(map,element.guardTower);
+                else if(element.sign) infoText = getSignInfo(map,element.sign);
+            }
+            map.config.info.innerHTML = infoText;
+        }
+
+        this.mouseDown = function(mx,my,button) {
+            if(button===0) {
+                this.config.list.style.display = 'none';
+                this.mx = mx;
+                this.my = my;
+                this.md = true;
+                this.mm = false;
+            }
         }
 
         this.mouseMove = function(mx,my) {
             if(!this.md) {
-                mx = Math.floor((this.x+mx-(getWidth()/2))/this.zoom);
-                my = Math.floor((this.y+my-(getHeight()/2))/this.zoom);
+                mx = this.mouseToTileX(mx);
+                my = this.mouseToTileY(my);
                 this.config.coordsMouse.innerHTML = mx+', '+my;
                 if(this.pointer.x!==-1 && this.pointer.y!==-1) {
                     let dx = Math.abs(this.pointer.x-mx);
@@ -399,7 +494,7 @@
                     let d = dx===0? dy : (dy===0? dx : Math.round(Math.sqrt(dx*dx+dy*dy)));
                     this.config.coordsDistance.innerHTML = d+' ['+dx+', '+dy+']';
                 }
-                return;
+                return false;
             }
             let dx = mx-this.mx;
             let dy = my-this.my;
@@ -407,35 +502,41 @@
             this.my = my;
             this.mm = true;
             this.go((this.x-dx)/this.zoom,(this.y-dy)/this.zoom);
+            return true;
         }
 
-        this.mouseUp = function() {
-            if(this.md===false) return;
-            this.md = false;
-            if(this.mm===false) {
-                let px = Math.floor((this.x+this.mx-(getWidth()/2))/this.zoom);
-                let py = Math.floor((this.y+this.my-(getHeight()/2))/this.zoom);
+        this.mouseUp = function(button) {
+            if(button===0) {
+                if(this.md===false) return false;
+                this.md = false;
+                if(this.mm!==false) return true;
+                let px = this.mouseToTileX(this.mx);
+                let py = this.mouseToTileY(this.my);
                 if(px===this.pointer.x && py===this.pointer.y) {
                     px = -1;
                     py = -1;
                 }
                 this.setPointer(px,py);
-                this.updateHash(this.pointer.x,this.pointer.y);
+            } else if(button===2) {
+                this.setPointer(-1,-1);
             }
+            this.updateHash();
+            return true;
         }
 
         this.setPointer = function(px,py) {
+            this.leaveDeed();
             this.pointer.x = px;
             this.pointer.y = py;
             if(px!==-1 && py!==-1) {
-                this.config.coordsPointer.style.display = 'block';
+                addClass(this.config.coords,'pointer-set');
                 this.config.coordsPointer.innerHTML = this.pointer.x+', '+this.pointer.y;
-                this.config.coordsDistance.style.display = 'block';
                 this.config.coordsDistance.innerHTML = '0 [0, 0]';
+                let deed = this.getDeed(px,py);
+                if(deed) this.setFocusDeed(deed);
                 this.updatePointer();
             } else {
-                this.config.coordsPointer.style.display = 'none';
-                this.config.coordsDistance.style.display = 'none';
+                removeClass(this.config.coords,'pointer-set');
                 this.pointer.element.style.display = 'none';
             }
         }
@@ -464,12 +565,14 @@
             if(this.zoomIndex===zoomLevels.length-1) return;
             this.zoomIndex++;
             this.zoomUpdate(mx,my);
+            this.updateHash();
         }
 
         this.zoomOut = function(mx,my) {
             if(this.zoomIndex===0) return;
             this.zoomIndex--;
             this.zoomUpdate(mx,my);
+            this.updateHash();
         }
 
         this.zoomUpdate = function(mx,my) {
@@ -496,11 +599,19 @@
             let html = '';
             for(let i=0; i<this.deeds.length; ++i)
                 if(this.deeds[i].search.indexOf(text)===0)
-                    html += '<div onclick="config.map.gotoDeed('+i+');">'+this.deeds[i].name+'</div>';
+                    html += '<div onclick="config.map.findDeed('+i+');">'+this.deeds[i].name+'</div>';
             for(let i=0; i<this.deeds.length; ++i)
                 if(this.deeds[i].search.indexOf(text)>=1)
-                    html += '<div onclick="config.map.gotoDeed('+i+');">'+this.deeds[i].name+'</div>';
+                    html += '<div onclick="config.map.findDeed('+i+');">'+this.deeds[i].name+'</div>';
             this.config.list.innerHTML = html;
+        }
+
+        this.getDeed = function(x,y) {
+            for(let i=0; i<this.deeds.length; ++i)  {
+                let d = this.deeds[i];
+                if(x>=d.sx && y>=d.sy && x<=d.ex && y<=d.ey) return d;
+            }
+            return null;
         }
 
         this.searchDeed = function() {
@@ -508,33 +619,54 @@
             this.config.list.setAttribute('style','display: none;');
             for(let i=0; i<this.deeds.length; ++i)
                 if(this.deeds[i].search.indexOf(text)===0) {
-                    this.gotoDeed(i);
+                    this.findDeed(i);
                     return;
                 }
             for(let i=0; i<this.deeds.length; ++i)
                 if(this.deeds[i].search.indexOf(text)>=1) {
-                    this.gotoDeed(i);
+                    this.findDeed(i);
                     return;
                 }
         }
 
         this.getDeedIndex = function(d) {
-            if(typeof d === 'string') {
+            if(typeof d === 'object' || typeof d === 'string') {
                 for(let i=0; i<this.deeds.length; ++i)
-                    if(this.deeds[i].search===d) return i;
-                return 0;
+                    if(this.deeds[i]===d || this.deeds[i].search===d) return i;
+            } else {
+                d = d*1;
+                if(d>=0 && d<this.deeds.length) return d;
             }
-            return d;
+            return false;
+        }
+
+        this.findDeed = function(d) {
+            this.gotoDeed(d);
+            this.updateHash();
+        }
+
+        this.leaveDeed = function() {
+            if(this.focusDeed) {
+                removeClass(this.focusDeed.marker.border,'selected');
+                this.focusDeed = null;
+            }
         }
 
         this.gotoDeed = function(d) {
-            d = this.getDeedIndex(d);
             this.config.list.setAttribute('style','display: none;');
             this.config.searchbox.value = '';
-            let deed = this.deeds[d];
+            this.leaveDeed();
             this.setPointer(-1,-1);
-            this.go(deed.x,deed.y);
-            this.updateHash(-1,-1,deed.search);
+            if(this.setFocusDeed(d))
+                this.go(this.focusDeed.x,this.focusDeed.y);
+        }
+
+        this.setFocusDeed = function(d) {
+            d = this.getDeedIndex(d);
+            if(d===false) return false;
+            this.focusDeed = this.deeds[d];
+            addClass(this.focusDeed.marker.border,'selected');
+            return true;
         }
 
         this.updateLayer = function(key) {
@@ -542,8 +674,9 @@
             if(!layer) return;
             let map = this;
             layer.checked = map[key];
-            layer.addEventListener('change',function(e) {
+            layer.updateLayer = function() {
                 map[key] = map.config.layers[key].checked;
+                map.updateHash();
                 if(key==='showDeeds' || key==='showPerimeters' ||
                    key==='showGuardTowers' || key==='showSigns') map.updateMarkers();
                 else if(key==='showKingdoms' || key==='showHighways') map.draw();
@@ -551,7 +684,8 @@
                     map.addNotification('Guard towers will only show when zooming in more.');
                 if(key==='showSigns' && map.showSigns && map.zoomIndex<=7)
                     map.addNotification('Signs will only show when zooming in more.');
-            });
+            }
+            layer.addEventListener('change',layer.updateLayer);
         }
 
         this.load = function() {
@@ -585,7 +719,6 @@
             }
             for(let i=0; i<this.focusZones.length; ++i) {
                 let focusZone = this.focusZones[i];
-                let name = focusZone.name;
                 let element = document.createElement('div');
                 let marker = new Marker('focusZone',focusZone.x,focusZone.y,focusZone.height,element);
                 this.updateMarker(marker);
@@ -624,7 +757,6 @@
             for(let key in this.config.layers)
                 this.updateLayer(key);
 
-            let params = {};
             let element = document.createElement('div');
             element.className = 'pointer';
             element.style.display = 'none';
@@ -647,6 +779,13 @@
 
         if(global.location.hash) {
             let params = parseQueryString(global.location.hash.substr(1));
+            if(params.z) {
+                let z = params.z*1;
+                if(z>=0 && z<zoomLevels.length) {
+                    this.zoomIndex = z;
+                    this.zoomUpdate();
+                }
+            }
             if(params.deed) {
                 this.gotoDeed(params.deed);
             } else if(params.x && params.y) {
@@ -655,16 +794,27 @@
                 this.setPointer(x,y);
                 this.go(x,y);
             }
+            if(params.l) {
+                let l = params.l*1;
+                let i = 0;
+                for(let key in this.config.layers) {
+                    let layer = this.config.layers[key];
+                    layer.checked = ((1<<(i++))&l)!==0;
+                    layer.updateLayer();
+                }
+            }
         }
     }
 
     config.container       = document.getElementById('container');
     config.canvas          = document.getElementById('map');
     config.ctx             = config.canvas.getContext('2d');
+    config.coords          = document.getElementById('coords');
     config.coordsMouse     = document.getElementById('coords-mouse');
     config.coordsPointer   = document.getElementById('coords-pointer');
     config.coordsDistance  = document.getElementById('coords-distance');
     config.markers         = document.getElementById('markers');
+    config.sidebar         = document.getElementById('sidebar');
     config.zoomIn          = document.getElementById('zoom-in');
     config.zoomOut         = document.getElementById('zoom-out');
     config.zoomScale       = document.getElementById('zoom-scale');
@@ -680,52 +830,61 @@
         showSigns:        document.getElementById('layer-signs')
     };
     config.info            = document.getElementById('info');
+    config.toggleSidebar   = document.getElementById('sidebar-toggle');
     config.searchbox       = document.getElementById('searchbox');
     config.searchbutton    = document.getElementById('searchbutton');
     config.list            = document.getElementById('autocomplete');
     config.mapFile         = document.getElementById('map-file');
     config.timestamp       = document.getElementById('timestamp');
+    config.touchDevice     = false;
 
     var map = new Map(config,kingdoms,deeds,focusZones,guardTowers,signs);
 
-    container.addEventListener('wheel',function(e) {
-        if(e.deltaY>0) map.zoomOut(e.pageX,e.pageY);
-        else if(e.deltaY<0) map.zoomIn(e.pageX,e.pageY);
-    });
-
-    var md = function(e) {
-        map.mouseDown(e.pageX,e.pageY);
-    };
-    config.canvas.addEventListener('mousedown',md);
-    config.markers.addEventListener('mousedown',md);
-
-    container.addEventListener('mouseup',function(e) {
-        map.mouseUp();
-    });
-
-    container.addEventListener('mousemove',function(e) {
-        map.mouseMove(e.pageX,e.pageY);
-    });
-
-    function touchHandler(event) {
-        let touch = event.changedTouches[0];
-        let simulatedEvent = document.createEvent('MouseEvent');
-        simulatedEvent.initMouseEvent({
-                touchstart: 'mousedown',
-                touchmove: 'mousemove',
-                touchend: 'mouseup'
-            }[event.type],true,true,global,1,
-            touch.screenX,touch.screenY,
-            touch.clientX,touch.clientY,
-            false,false,false,false,0,null);
-        simulatedEvent.touches = event.touches;
-        touch.target.dispatchEvent(simulatedEvent);
-        event.preventDefault();
+    if(isTouchEnabled()) {
+        addClass(config.container,'touch-display');
+        config.touchDevice = true;
+        let mouseMoveHandler = function(e) {
+            removeClass(config.container,'touch-display');
+            config.container.removeEventListener('mousemove',mouseMoveHandler);
+        }
+        config.container.addEventListener('mousemove',mouseMoveHandler);
     }
 
-    container.addEventListener('touchstart',touchHandler,true);
-    container.addEventListener('touchmove',touchHandler,true);
-    container.addEventListener('touchend',touchHandler,true);
+    config.container.addEventListener('wheel',function(e) {
+        if(e.deltaY>0) map.zoomOut(e.pageX,e.pageY);
+        else if(e.deltaY<0) map.zoomIn(e.pageX,e.pageY);
+        stopEvent(e);
+    });
+
+    function mouseDown(e) {
+        map.mouseDown(e.pageX,e.pageY,e.button);
+        stopEvent(e);
+    }
+    config.canvas.addEventListener('mousedown',mouseDown);
+    config.markers.addEventListener('mousedown',mouseDown);
+    config.container.addEventListener('mousemove',function(e) {
+        if(map.mouseMove(e.pageX,e.pageY)) stopEvent(e);
+    });
+    config.container.addEventListener('mouseup',function(e) {
+        if(map.mouseUp(e.button)) stopEvent(e);
+    });
+    config.canvas.addEventListener('contextmenu',function(e) { stopEvent(e); });
+    config.markers.addEventListener('contextmenu',function(e) { stopEvent(e); });
+
+    function touchStart(e) {
+        let touch = e.changedTouches[0];
+        map.touchDown(touch.clientX,touch.clientY);
+        map.mouseDown(touch.clientX,touch.clientY,0);
+    }
+    config.canvas.addEventListener('touchstart',touchStart);
+    config.markers.addEventListener('touchstart',touchStart);
+    config.container.addEventListener('touchmove',function(e) {
+        let touch = e.changedTouches[0];
+        if(map.mouseMove(touch.clientX,touch.clientY)) stopEvent(e);
+    });
+    config.container.addEventListener('touchend',function(e) {
+        if(map.mouseUp(0)) stopEvent(e);
+    });
 
     config.toggleTerrain.addEventListener('click',function(e) {
         if(map.mode==='terrain') return;
@@ -755,6 +914,10 @@
         map.mode = 'isometric';
         map.load();
         map.update();
+    });
+
+    config.toggleSidebar.addEventListener('click',function(e) {
+        toggleClass(config.container,'no-sidebar');
     });
 
     config.searchbox.addEventListener('keyup',function(e) {

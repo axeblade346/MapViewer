@@ -2,7 +2,7 @@
 body {
 	margin: 0px;
 	font-family: sans-serif;
-	font-size: 11px;
+	font-size: 12px;
 	color: #444444;
 }
 
@@ -29,21 +29,18 @@ a, a:hover, a:focus {
 	overflow: hidden;
 	background-color: #383E71;
 	background-image: url('bg.png');
-	background-repeat: repeat-both;
-	cursor: arrow;
+	background-repeat: repeat;
+	cursor: default;
 }
 
 #container:active {
-	cursor: arrow;
+	cursor: default;
 }
 
 #map {
 	position: absolute;
 	image-rendering: optimizeSpeed;
 	image-rendering: -moz-crisp-edges;
-	image-rendering: -webkit-optimize-contrast;
-	image-rendering: optimize-contrast;
-	image-rendering: pixelated;
 	-ms-interpolation-mode: nearest-neighbor;
 }
 
@@ -68,7 +65,7 @@ a, a:hover, a:focus {
 	display: inline;
 	background-color: rgba(0, 0, 0, 0.5);
 	font-family: sans-serif;
-	font-size: 11px;
+	font-size: 100%;
 	color: #fff;
 	padding: 1px 2px 1px 2px;
 	line-height: 256px;
@@ -98,12 +95,16 @@ a, a:hover, a:focus {
 .zoom0 .deed.deed-normal,
 .zoom1 .deed.deed-normal,
 .zoom2 .deed.deed-normal { display: none !important; }
-.zoom3 .deed.deed-normal { font-size: 8px;top: -13px; }
+.zoom3 .deed.deed-normal { font-size: 73%;top: -13px; }
 
 .border {
 	border: 1px solid rgba(255, 255, 255, 0.35);
 	border-radius: 1px;
 	position: absolute;
+}
+
+.border.selected {
+	border: 1px solid #CCFFFF;
 }
 
 .bounds {
@@ -210,7 +211,7 @@ a, a:hover, a:focus {
 	top: 8px;
 	left: 8px;
 	bottom: 8px;
-	width: 150px;
+	width: 170px;
 	margin: 0;
 	padding: 5px;
 	background-color: #FFF;
@@ -224,8 +225,8 @@ a, a:hover, a:focus {
 	text-align: center;
 	font-family: "Book Antiqua";
 	font-weight: normal;
-	font-size: 16px;
-	line-height: 26px;
+	font-size: 145%;
+	line-height: 1.625em;
 	color: black;
 	margin: 0;
 	padding: 0;
@@ -256,7 +257,7 @@ a, a:hover, a:focus {
 .panel h3 {
 	margin: 0;
 	padding: 2px 0;
-	font-size: 12px;
+	font-size: 110%;
 	font-weight: bold;
 	text-align: center;
 	background-color: #EEE;
@@ -323,7 +324,7 @@ a, a:hover, a:focus {
 	width: 32px;
 	height: 32px;
 	line-height: 32px;
-	font-size: 20px;
+	font-size: 180%;
 }
 
 #zoom-in {
@@ -338,7 +339,7 @@ a, a:hover, a:focus {
 
 #zoom-scale  {
 	line-height: 32px;
-	font-size: 12px;
+	font-size: 110%;
 	margin: 0;
 	padding: 0;
 	text-align: center;
@@ -356,6 +357,16 @@ a, a:hover, a:focus {
 	border-bottom: none;
 }
 
+#coords #coords-pointer,
+#coords #coords-distance {
+	display: none;
+}
+
+#coords.pointer-set #coords-pointer,
+#coords.pointer-set #coords-distance {
+	display: block;
+}
+
 #coords p {
 	text-align: center;
 	margin: 0;
@@ -369,7 +380,7 @@ a, a:hover, a:focus {
 }
 
 #info h4 {
-	font-size: 12px;
+	font-size: 110%;
 	font-weight: bold;
 	text-align: center;
 	background-color: #D5E9FF;
@@ -387,7 +398,7 @@ a, a:hover, a:focus {
 
 #info dd {
 	margin: 0 0 0 1em;
-	font-size: 10px;
+	font-size: 90%;
 }
 
 #info dd.sign-info {
@@ -396,7 +407,7 @@ a, a:hover, a:focus {
 	background: #eeeeee;
 	border: 1px solid #999999;
 	border-radius: 2px;
-	font-size: 10px;
+	font-size: 90%;
 	font-style: italic;
 	text-align: center;
 }
@@ -407,9 +418,13 @@ a, a:hover, a:focus {
 	float: right;
 }
 
+#sidebar-toggle {
+	display: none;
+}
+
 #search {
 	position: absolute;
-	left: 178px;
+	left: 198px;
 	top: 8px;
 	display: block;
 	margin: 0;
@@ -432,7 +447,7 @@ a, a:hover, a:focus {
 	border-radius: 2px;
 	color: #444;
 	float: left;
-	font-size: 11px;
+	font-size: 100%;
 }
 
 #searchbutton {
@@ -440,7 +455,7 @@ a, a:hover, a:focus {
 	height: 24px;
 	border-radius: 2px;
 	background-image: url('search.png');
-	background-repeat: repeat-none;
+	background-repeat: no-repeat;
 	float: left;
 	cursor: pointer;
 	margin: 2px;
@@ -463,10 +478,104 @@ a, a:hover, a:focus {
 
 #autocomplete div {
 	padding: 3px;
-	font-size: 14px;
+	font-size: 127%;
 	cursor: pointer;
 }
 
 #autocomplete div:hover {
 	background-color: #8EAEEE;
+}
+
+body .touch-display {
+	font-size: 16px;
+}
+
+.touch-display #sidebar {
+	width: 250px;
+	bottom: auto;
+	border-radius: 5px 0 5px 5px;
+	transition: left 200ms ease-in-out;
+}
+.no-sidebar.touch-display #sidebar {
+	left: -262px;
+	transition: left 200ms ease-in-out;
+}
+
+.touch-display #zoom-in,
+.touch-display #zoom-out {
+	width: 46px;
+	height: 46px;
+	line-height: 46px;
+	font-size: 200%;
+}
+.touch-display #zoom-scale {
+	line-height: 46px;
+	font-size: 140%;
+}
+
+.touch-display #sidebar footer {
+	position: static;
+	display: block;
+	margin-top: 0.5em;
+}
+
+.touch-display #sidebar-toggle {
+	display: block;
+	position:absolute;
+	left: 269px;
+	top: 8px;
+	font-size: 36px;
+	line-height: 36px;
+	text-align: center;
+	background-color: #FFF;
+	border: 1px solid #CCC;
+	border-radius: 0 5px 5px 0;
+	width: 46px;
+	height: 46px;
+	padding: 0 0 10px 0;
+	cursor: pointer;
+}
+.no-sidebar.touch-display #sidebar-toggle {
+	left: 0;
+	transition: left 200ms ease-in-out;
+}
+
+.touch-display #search {
+	left: 324px;
+	border: 1px solid #CCC;
+	border-radius: 5px;
+}
+.no-sidebar.touch-display #search {
+	left: 55px;
+	transition: left 200ms ease-in-out;
+}
+
+.touch-display #searchbox {
+	width: 300px;
+	height: 32px;
+	border-radius: 5px;
+	font-size: 120%;
+}
+
+.touch-display #searchbutton {
+	display: none;
+}
+
+.touch-display #autocomplete {
+	left: 6px;
+	top: 44px;
+	font-size: 140%;
+	width: 300px;
+}
+
+.touch-display #coords,
+.touch-display #coords #coords-pointer,
+.touch-display #coords #coords-mouse,
+.touch-display #coords #coords-distance {
+	display: none;
+}
+
+.touch-display #coords.pointer-set,
+.touch-display #coords.pointer-set #coords-pointer {
+	display: block;
 }
