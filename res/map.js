@@ -242,7 +242,10 @@
             let map = this;
             let hash = [];
             let p = this.pointer;
-            if(p.x!==-1 && p.y!==-1) hash.push('x='+p.x+'&y='+p.y);
+            let x = Math.round(this.x/this.zoom);
+            let y = Math.round(this.y/this.zoom);
+            hash.push('coords='+x+','+y);
+            if(p.x!==-1 && p.y!==-1) hash.push('pointer='+p.x+','+p.y);
             else if(this.focusDeed!==null) hash.push('deed='+this.focusDeed.search);
             if(this.zoomIndex!==4) hash.push('z='+this.zoomIndex);
             let i = 0,l = 0;
@@ -503,14 +506,15 @@
             if(button===0) {
                 if(this.md===false) return false;
                 this.md = false;
-                if(this.mm!==false) return true;
-                let px = this.mouseToTileX(this.mx);
-                let py = this.mouseToTileY(this.my);
-                if((px===this.pointer.x && py===this.pointer.y) || (touch && this.pointer.x!==-1 && this.pointer.y!==-1)) {
-                    px = -1;
-                    py = -1;
+                if(this.mm===false) {
+                    let px = this.mouseToTileX(this.mx);
+                    let py = this.mouseToTileY(this.my);
+                    if((px===this.pointer.x && py===this.pointer.y) || (touch && this.pointer.x!== -1 && this.pointer.y!== -1)) {
+                        px = -1;
+                        py = -1;
+                    }
+                    this.setPointer(px,py);
                 }
-                this.setPointer(px,py);
             } else if(button===2) {
                 this.setPointer(-1,-1);
             }
@@ -782,11 +786,20 @@
             }
             if(params.deed) {
                 this.gotoDeed(params.deed);
-            } else if(params.x && params.y) {
-                let x = params.x*1.0;
-                let y = params.y*1.0
-                this.setPointer(x,y);
-                this.go(x,y);
+            } else if(params.coords || params.pointer) {
+                if(params.pointer) {
+                    let c = params.pointer.split(',');
+                    let x = c[0]*1.0;
+                    let y = c[1]*1.0;
+                    this.setPointer(x,y);
+                    if(!params.coords) this.go(x,y);
+                }
+                if(params.coords) {
+                    let c = params.coords.split(',');
+                    let x = c[0]*1.0;
+                    let y = c[1]*1.0;
+                    this.go(x,y);
+                }
             }
             if(params.l) {
                 let l = params.l*1;
