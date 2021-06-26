@@ -21,6 +21,7 @@ public final class MapViewer {
         "logo.png",
         "main.css",
         "map.js",
+        "menu.png",
         "pointer.png",
         "search.png",
         "sign.png",
@@ -104,67 +105,69 @@ public final class MapViewer {
         sb.append("\"></canvas>\n");
         sb.append("  <div id=\"markers\"></div>\n")
           .append("  <aside id=\"sidebar\">\n")
-          .append("    <header>\n")
-          .append("      <h2><a href=\"").append(config.getWebPageURL()).append("\">");
+          .append("    <div>\n")
+          .append("      <header>\n")
+          .append("        <h2><a href=\"").append(config.getWebPageURL()).append("\">");
         if(php) sb.append("<?= $serverName ?>");
         else sb.append(serverName);
         sb.append("</a></h2>\n")
-          .append("    </header>\n")
-          .append("    <section id=\"zoom\" class=\"panel\">\n")
-          .append("      <h3>Zoom</h3>\n")
-          .append("      <div id=\"zoom-in\">+</div>\n")
-          .append("      <div id=\"zoom-out\">-</div>\n")
-          .append("      <div id=\"zoom-scale\"></div>\n")
-          .append("    </section>\n")
-          .append("    <section id=\"map-type\" class=\"panel\">\n")
-          .append("      <h3>Map Type</h3>\n")
-          .append("      <div id=\"map-terrain\" class=\"selected\">Terrain</div>\n")
-          .append("      <div id=\"map-topographic\">Topographic</div>\n")
-          .append("      <div id=\"map-isometric\">Isometric</div>\n")
-          .append("    </section>\n")
-          .append("    <section id=\"coords\" class=\"panel\">\n")
-          .append("      <h3>Coordinates</h3>\n")
-          .append("      <div id=\"coords-pointer\"></div>\n")
-          .append("      <div id=\"coords-mouse\">0, 0</div>\n")
-          .append("      <div id=\"coords-distance\"></div>\n")
-          .append("    </section>\n");
+          .append("      </header>\n")
+          .append("      <section id=\"zoom\" class=\"panel\">\n")
+          .append("        <h3>Zoom</h3>\n")
+          .append("        <div id=\"zoom-in\">+</div>\n")
+          .append("        <div id=\"zoom-out\">-</div>\n")
+          .append("        <div id=\"zoom-scale\"></div>\n")
+          .append("      </section>\n")
+          .append("      <section id=\"map-type\" class=\"panel\">\n")
+          .append("        <h3>Map Type</h3>\n")
+          .append("        <div id=\"map-terrain\" class=\"selected\">Terrain</div>\n")
+          .append("        <div id=\"map-topographic\">Topographic</div>\n")
+          .append("        <div id=\"map-isometric\">Isometric</div>\n")
+          .append("      </section>\n")
+          .append("      <section id=\"coords\" class=\"panel\">\n")
+          .append("        <h3>Coordinates</h3>\n")
+          .append("        <div id=\"coords-pointer\"></div>\n")
+          .append("        <div id=\"coords-mouse\">0, 0</div>\n")
+          .append("        <div id=\"coords-distance\"></div>\n")
+          .append("      </section>\n");
         if(config.showDeeds() || config.showGuardTowers() || config.showKingdoms() ||
            config.showHighways() || config.showSigns()) {
-            sb.append("    <section class=\"panel\">\n")
-              .append("      <h3>Layers</h3>\n");
+            sb.append("      <section class=\"panel\">\n")
+              .append("        <h3>Layers</h3>\n");
             if(config.showDeeds()) {
-                sb.append("      <label><input type=\"checkbox\" id=\"layer-deeds\" />Deeds</label>\n")
-                  .append("      <label><input type=\"checkbox\" id=\"layer-perimeters\" />Perimeters</label>\n");
+                sb.append("        <label><input type=\"checkbox\" id=\"layer-deeds\" />Deeds</label>\n")
+                  .append("        <label><input type=\"checkbox\" id=\"layer-perimeters\" />Perimeters</label>\n");
             }
             if(config.showGuardTowers()) {
-                sb.append("      <label><input type=\"checkbox\" id=\"layer-guardtowers\" />Guard towers</label>\n");
+                sb.append("        <label><input type=\"checkbox\" id=\"layer-guardtowers\" />Guard towers</label>\n");
             }
             if(config.showKingdoms()) {
-                sb.append("      <label><input type=\"checkbox\" id=\"layer-kingdoms\" />Kingdoms</label>\n");
+                sb.append("        <label><input type=\"checkbox\" id=\"layer-kingdoms\" />Kingdoms</label>\n");
             }
             if(config.showHighways()) {
-                sb.append("      <label><input type=\"checkbox\" id=\"layer-highways\" />Highways</label>\n");
+                sb.append("        <label><input type=\"checkbox\" id=\"layer-highways\" />Highways</label>\n");
             }
             if(config.showSigns()) {
-                sb.append("      <label><input type=\"checkbox\" id=\"layer-signs\" />Signs</label>\n");
+                sb.append("        <label><input type=\"checkbox\" id=\"layer-signs\" />Signs</label>\n");
             }
-            sb.append("    </section>\n");
+            sb.append("      </section>\n");
         }
-        sb.append("    <section class=\"panel\">\n")
-          .append("      <h3>Info</h3>\n")
-          .append("      <div id=\"info\"></div>\n")
-          .append("    </section>\n")
+        sb.append("      <section class=\"panel\">\n")
+          .append("        <h3>Info</h3>\n")
+          .append("        <div id=\"info\"></div>\n")
+          .append("      </section>\n")
+          .append("    </div>\n")
           .append("    <footer>\n")
           .append("      <div id=\"timestamp\"></div>\n")
           .append("      <a id=\"map-file\" href=\"#\" target=\"_blank\">Map file</a>\n")
           .append("    </footer>\n")
           .append("  </aside>\n")
-          .append("  <button id=\"sidebar-toggle\">&equiv;</button>\n")
+          .append("  <button id=\"sidebar-toggle\"><i></i></button>\n")
           .append("  <div id=\"search\">\n")
           .append("    <input type=\"text\" id=\"searchbox\" placeholder=\"Search deeds and locations...\" />\n")
           .append("    <div id=\"searchbutton\"></div>\n")
-          .append("    <div id=\"autocomplete\" style=\"display: none;\"></div>\n")
           .append("  </div>\n")
+          .append("  <div id=\"autocomplete\" style=\"display: none;\"></div>\n")
           .append("</main>\n")
           .append("<script type=\"text/javascript\" src=\"config.js\"></script>\n")
           .append("<script type=\"text/javascript\" src=\"map.js\"></script>\n")
