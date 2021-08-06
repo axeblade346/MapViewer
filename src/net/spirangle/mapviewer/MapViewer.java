@@ -21,6 +21,7 @@ public final class MapViewer {
         "logo.png",
         "main.css",
         "map.js",
+        "ls.js",
         "menu.png",
         "pointer.png",
         "search.png",
@@ -152,6 +153,29 @@ public final class MapViewer {
             }
             sb.append("      </section>\n");
         }
+        
+            if(config.showlsa()) {
+		    sb.append("<! –– part of the LSA Addon by Axeblade -->")
+            sb.append("    <div class=\"panel\">")
+            sb.append("      <h3>Locate Soul Assistant</h3>")
+            sb.append("	  <label>Face NORTH when using this</label>")
+            sb.append("		<label for=\"XI\">X</label>")
+            sb.append("		<input type=\"number\" id=\"XI\" name=\"XI\" min=\"1\" max=\"8192\">")
+            sb.append("		<label for=\"YI\">Y</label>")
+            sb.append("		<input type=\"number\" id=\"YI\" name=\"YI\" min=\"1\" max=\"8192\">")
+            sb.append("		<label for=\"EI\">Paste event message here</label>")
+            sb.append("		<input type=\"text\" id=\"EI\" name=\"EI\" size=\"15\">")
+            sb.append("		<button onclick=\"lsacall()\">Add search area</button>")
+            sb.append("	</div>")
+            sb.append("	<script type=\"text/javascript\" src=\"lsa.js\"></script>")
+            sb.append("	<script>")
+            sb.append("			function lsacall() {")
+            sb.append("				ls(document.getElementById(\"XI\").value,document.getElementById(\"YI\").value,document.getElementById(\"EI\").value)")
+            sb.append("			}")
+            sb.append("		</script>")
+            sb.append("	<! –– part of the LSA Addon by Axeblade -->");
+             }
+
         sb.append("      <section class=\"panel\">\n")
           .append("        <h3>Info</h3>\n")
           .append("        <div id=\"info\"></div>\n")
