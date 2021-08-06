@@ -42,7 +42,7 @@ public final class Config {
     private int[] guardTowerIDs;
     private String neutralLandName;
     private String[] kingdomColors;
-
+    private boolean showlsa;
     private Config() {
 
     }
@@ -101,6 +101,9 @@ public final class Config {
             String kcols = getProperty(properties,"kingdom-colors",suffix,null);
             kingdomColors = parseArray(kcols);
             logger.info("Kingdom colors: "+kcols);
+            showlsa = Boolean.parseBoolean(getProperty(properties,"show-lsa",suffix,"true"));
+            logger.info("Show LSA: "+showlsa);
+
         }
     }
 
@@ -211,4 +214,8 @@ public final class Config {
     public String getKingdomColor(int kingdom) {
         return kingdomColors!=null && kingdom>=0 && kingdom<kingdomColors.length? kingdomColors[kingdom] : null;
     }
+public boolean showlsa() {
+        return this.showlsa;
+    }
+
 }
